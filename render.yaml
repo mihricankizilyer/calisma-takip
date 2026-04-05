@@ -13,3 +13,4 @@ services:
         value: "20"
       # Sadece siz erişsin: Dashboard'dan ekleyin (değeri repoya yazmayın):
       # PRIVATE_ACCESS_PASS, isteğe bağlı PRIVATE_ACCESS_USER
+      # Kalıcı SQLite için: Dashboard'dan Disk ekleyin + CALISMA_DATA_DIR = disk mount yolu

@@ -16,7 +16,9 @@ var API_KEY = process.env.CALISMA_API_KEY || "";
 var PRIVATE_USER = process.env.PRIVATE_ACCESS_USER || "";
 var PRIVATE_PASS = process.env.PRIVATE_ACCESS_PASS || "";
 var ROOT = path.join(__dirname, "..");
-var DATA_DIR = path.join(__dirname, "data");
+var DATA_DIR = process.env.CALISMA_DATA_DIR
+  ? path.resolve(process.env.CALISMA_DATA_DIR)
+  : path.join(__dirname, "data");
 var DB_PATH = path.join(DATA_DIR, "calisma.db");
 
 var SESSION_MS = 365 * 24 * 60 * 60 * 1000;
@@ -88,6 +90,16 @@ function privateAccess(req, res, next) {
 }
 
 app.use(privateAccess);
+
+app.get("/api/auth/status", function (req, res) {
+  try {
+    var row = db.prepare("SELECT COUNT(*) AS c FROM users").get();
+    var c = row && typeof row.c === "number" ? row.c : 0;
+    res.json({ usersCount: c, legacyMode: c === 0 });
+  } catch (e) {
+    res.status(500).json({ error: String(e && e.message) });
+  }
+});
 
 function legacyMode() {
   var row = db.prepare("SELECT COUNT(*) AS c FROM users").get();
@@ -238,8 +250,8 @@ app.post("/api/auth/login", function (req, res) {
     if (!user) {
       return res.status(401).json({
         error:
-          "Bu sunucuda bu kullanıcı adıyla kayıt yok. Önce bu sitede Kayıt ol kullanın. " +
-          "Bilgisayarda kayıt edip telefonda Render adresiyle giriyorsanız: hesap o sunucuda olmalı (aynı adres).",
+          "Bu kullanıcı adı bu sunucuda yok. Önce Kayıt ol veya sunucu adresini (Ayarlar) kontrol edin.",
+        code: "no_user",
       });
     }
     if (!verifyPassword(password, user.password_hash)) {
@@ -351,6 +363,9 @@ app.listen(PORT, HOST, function () {
   }
   console.log("");
   console.log("Veritabanı:", DB_PATH);
+  if (process.env.CALISMA_DATA_DIR) {
+    console.log("  (CALISMA_DATA_DIR ile kalıcı disk kullanılıyor.)");
+  }
   console.log("İpucu: Windows Güvenlik Duvarı izin isteyebilir; izin verin.");
   console.log("İnternet (farklı Wi‑Fi): proje kökünde veya server klasöründe  npm run tunnel");
   console.log(

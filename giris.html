@@ -52,8 +52,9 @@
           </p>
           <p class="ayarlar-sync-intro">
             <strong>Önemli:</strong> Kayıt <em>hangi adreste</em> yapıldıysa giriş de <em>aynı sunucu adresinde</em> olmalıdır.
-            Bilgisayarda localhost’a kayıt edip telefonda Render adresiyle giriş yapılamaz; her iki cihazda da Ayarlar’a aynı Render (veya tünel) adresini yazın ve o sitede Kayıt ol / Giriş yapın.
+            Bilgisayarda localhost’a kayıt edip telefonda Render adresiyle giriş yapılamaz; her iki cihazda da Ayarlar’a aynı adresi yazın (ör. <code>https://calisma-takip.onrender.com</code>, sonda <code>/</code> olmadan).
           </p>
+          <p id="giris-banner" class="ayarlar-sync-intro" role="status" style="display: none; background: rgba(46, 125, 50, 0.08); border-radius: 8px; padding: 12px 14px;"></p>
           <div class="yds-field yds-field--span ayarlar-sync-field">
             <label for="giris-user">Kullanıcı adı (3–32 karakter, harf rakam _)</label>
             <input type="text" id="giris-user" class="ayarlar-sync-input" autocomplete="username" maxlength="32" />
@@ -64,8 +65,8 @@
           </div>
           <p id="giris-msg" class="panel__sub" style="display:none; color: var(--color-danger, #c0392b);" role="alert"></p>
           <div class="ayarlar-sync-actions">
-            <button type="button" class="btn btn--primary" id="btn-giris-login">Giriş yap</button>
-            <button type="button" class="btn btn--ghost" id="btn-giris-register">Kayıt ol</button>
+            <button type="button" class="btn btn--primary" id="btn-giris-register">Kayıt ol</button>
+            <button type="button" class="btn btn--ghost" id="btn-giris-login">Giriş yap</button>
           </div>
         </section>
       </div>
