@@ -1,12 +1,11 @@
 "use strict";
 
 var crypto = require("crypto");
-var fs = require("fs");
 var os = require("os");
 var path = require("path");
 var express = require("express");
 var cors = require("cors");
-var Database = require("better-sqlite3");
+var store = require("./store");
 
 var PORT = process.env.PORT || 3000;
 /** Tüm ağ arayüzlerinde dinle (telefon aynı Wi‑Fi’den PC’nin IP’si ile bağlanabilsin). */
@@ -16,48 +15,8 @@ var API_KEY = process.env.CALISMA_API_KEY || "";
 var PRIVATE_USER = process.env.PRIVATE_ACCESS_USER || "";
 var PRIVATE_PASS = process.env.PRIVATE_ACCESS_PASS || "";
 var ROOT = path.join(__dirname, "..");
-var DATA_DIR = process.env.CALISMA_DATA_DIR
-  ? path.resolve(process.env.CALISMA_DATA_DIR)
-  : path.join(__dirname, "data");
-var DB_PATH = path.join(DATA_DIR, "calisma.db");
 
 var SESSION_MS = 365 * 24 * 60 * 60 * 1000;
-
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-var db = new Database(DB_PATH);
-db.pragma("foreign_keys = ON");
-db.exec(
-  "CREATE TABLE IF NOT EXISTS app_state (" +
-    "id INTEGER PRIMARY KEY CHECK (id = 1)," +
-    "payload TEXT NOT NULL," +
-    "updated_at TEXT NOT NULL" +
-    ")"
-);
-db.exec(
-  "CREATE TABLE IF NOT EXISTS users (" +
-    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-    "username TEXT UNIQUE NOT NULL COLLATE NOCASE," +
-    "password_hash TEXT NOT NULL," +
-    "created_at TEXT NOT NULL" +
-    ")"
-);
-db.exec(
-  "CREATE TABLE IF NOT EXISTS user_state (" +
-    "user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE," +
-    "payload TEXT NOT NULL," +
-    "updated_at TEXT NOT NULL" +
-    ")"
-);
-db.exec(
-  "CREATE TABLE IF NOT EXISTS sessions (" +
-    "token TEXT PRIMARY KEY," +
-    "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
-    "expires_at TEXT NOT NULL" +
-    ")"
-);
 
 var app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -91,19 +50,29 @@ function privateAccess(req, res, next) {
 
 app.use(privateAccess);
 
-app.get("/api/auth/status", function (req, res) {
-  try {
-    var row = db.prepare("SELECT COUNT(*) AS c FROM users").get();
-    var c = row && typeof row.c === "number" ? row.c : 0;
-    res.json({ usersCount: c, legacyMode: c === 0 });
-  } catch (e) {
-    res.status(500).json({ error: String(e && e.message) });
-  }
-});
+function ash(fn) {
+  return function (req, res, next) {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
 
-function legacyMode() {
-  var row = db.prepare("SELECT COUNT(*) AS c FROM users").get();
-  return !row || row.c === 0;
+function toIso(v) {
+  if (v == null) return "";
+  if (v instanceof Date) return v.toISOString();
+  return String(v);
+}
+
+app.get(
+  "/api/auth/status",
+  ash(async function (req, res) {
+    var c = await store.countUsers();
+    res.json({ usersCount: c, legacyMode: c === 0 });
+  })
+);
+
+async function legacyMode() {
+  var c = await store.countUsers();
+  return c === 0;
 }
 
 function hashPassword(plain) {
@@ -122,22 +91,23 @@ function verifyPassword(plain, stored) {
   return check === expected;
 }
 
-function getSessionUserId(req) {
+async function getSessionUserId(req) {
   var token = (req.headers["x-calisma-session"] || "").trim();
   if (!token) return null;
-  var row = db.prepare("SELECT user_id, expires_at FROM sessions WHERE token = ?").get(token);
+  var row = await store.getSessionRow(token);
   if (!row) return null;
-  if (new Date(row.expires_at).getTime() < Date.now()) {
-    db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
+  var expMs = new Date(toIso(row.expires_at)).getTime();
+  if (expMs < Date.now()) {
+    await store.deleteSession(token);
     return null;
   }
   return row.user_id;
 }
 
-function createSession(userId) {
+async function createSession(userId) {
   var token = crypto.randomBytes(32).toString("hex");
   var exp = new Date(Date.now() + SESSION_MS).toISOString();
-  db.prepare("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)").run(token, userId, exp);
+  await store.insertSession(token, userId, exp);
   return token;
 }
 
@@ -160,9 +130,9 @@ function defaultPayload() {
   };
 }
 
-function readLegacyState(res) {
+async function readLegacyState(res) {
   try {
-    var row = db.prepare("SELECT payload, updated_at FROM app_state WHERE id = 1").get();
+    var row = await store.getLegacyStateRow();
     if (!row) {
       var empty = defaultPayload();
       empty._serverEmpty = true;
@@ -170,16 +140,16 @@ function readLegacyState(res) {
     }
     var data = JSON.parse(row.payload);
     if (!data || typeof data !== "object") data = defaultPayload();
-    data._serverUpdatedAt = row.updated_at;
+    data._serverUpdatedAt = toIso(row.updated_at);
     res.json(data);
   } catch (e) {
     res.status(500).json({ error: String(e && e.message) });
   }
 }
 
-function readUserState(userId, res) {
+async function readUserState(userId, res) {
   try {
-    var row = db.prepare("SELECT payload, updated_at FROM user_state WHERE user_id = ?").get(userId);
+    var row = await store.getUserStateRow(userId);
     if (!row) {
       var empty = defaultPayload();
       empty._serverEmpty = true;
@@ -187,15 +157,16 @@ function readUserState(userId, res) {
     }
     var data = JSON.parse(row.payload);
     if (!data || typeof data !== "object") data = defaultPayload();
-    data._serverUpdatedAt = row.updated_at;
+    data._serverUpdatedAt = toIso(row.updated_at);
     res.json(data);
   } catch (e) {
     res.status(500).json({ error: String(e && e.message) });
   }
 }
 
-app.post("/api/auth/register", function (req, res) {
-  try {
+app.post(
+  "/api/auth/register",
+  ash(async function (req, res) {
     var username = req.body && req.body.username != null ? String(req.body.username).trim() : "";
     var password = req.body && req.body.password != null ? String(req.body.password).trim() : "";
     if (!username || !password) {
@@ -210,20 +181,19 @@ app.post("/api/auth/register", function (req, res) {
     if (password.length < 8) {
       return res.status(400).json({ error: "Şifre en az 8 karakter olmalı." });
     }
-    var taken = db.prepare("SELECT id FROM users WHERE username = ? COLLATE NOCASE").get(username);
-    if (taken) {
+    var takenId = await store.findUserIdByUsername(username);
+    if (takenId) {
       return res.status(409).json({ error: "Bu kullanıcı adı zaten kayıtlı." });
     }
-    var migrateLegacy = legacyMode();
+    var migrateLegacy = await legacyMode();
     var legacyPayload = null;
     if (migrateLegacy) {
-      var legacyRow = db.prepare("SELECT payload FROM app_state WHERE id = 1").get();
+      var legacyRow = await store.getLegacyPayloadOnly();
       if (legacyRow && legacyRow.payload) legacyPayload = legacyRow.payload;
     }
     var now = new Date().toISOString();
     var ph = hashPassword(password);
-    var ins = db.prepare("INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)").run(username, ph, now);
-    var userId = ins.lastInsertRowid;
+    var userId = await store.insertUser(username, ph, now);
     var payload = JSON.stringify(defaultPayload());
     if (legacyPayload) {
       try {
@@ -231,110 +201,110 @@ app.post("/api/auth/register", function (req, res) {
         if (parsed && typeof parsed === "object") payload = JSON.stringify(parsed);
       } catch (e) {}
     }
-    db.prepare("INSERT INTO user_state (user_id, payload, updated_at) VALUES (?, ?, ?)").run(userId, payload, now);
-    var token = createSession(userId);
+    await store.insertUserState(userId, payload, now);
+    var token = await createSession(userId);
     res.json({ ok: true, token: token, username: username });
-  } catch (e) {
-    res.status(500).json({ error: String(e && e.message) });
-  }
-});
+  })
+);
 
-app.post("/api/auth/login", function (req, res) {
-  try {
+app.post(
+  "/api/auth/login",
+  ash(async function (req, res) {
     var username = req.body && req.body.username != null ? String(req.body.username).trim() : "";
     var password = req.body && req.body.password != null ? String(req.body.password).trim() : "";
     if (!username || !password) {
       return res.status(400).json({ error: "Kullanıcı adı ve şifre gerekli." });
     }
-    var user = db.prepare("SELECT id, password_hash FROM users WHERE username = ? COLLATE NOCASE").get(username);
+    var user = await store.findUserByUsername(username);
     if (!user) {
       return res.status(401).json({
-        error:
-          "Bu kullanıcı adı bu sunucuda yok. Önce Kayıt ol veya sunucu adresini (Ayarlar) kontrol edin.",
+        error: "Bu kullanıcı adı bu sunucuda yok. Önce Kayıt ol veya sunucu adresini (Ayarlar) kontrol edin.",
         code: "no_user",
       });
     }
     if (!verifyPassword(password, user.password_hash)) {
       return res.status(401).json({ error: "Şifre yanlış." });
     }
-    var token = createSession(user.id);
+    var token = await createSession(user.id);
     res.json({ ok: true, token: token, username: username });
-  } catch (e) {
-    res.status(500).json({ error: String(e && e.message) });
-  }
-});
+  })
+);
 
-app.post("/api/auth/logout", function (req, res) {
-  try {
+app.post(
+  "/api/auth/logout",
+  ash(async function (req, res) {
     var token = (req.headers["x-calisma-session"] || "").trim();
-    if (token) db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
+    if (token) await store.deleteSession(token);
     res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: String(e && e.message) });
-  }
-});
+  })
+);
 
-app.get("/api/state", function (req, res) {
-  if (legacyMode()) {
-    return readLegacyState(res);
-  }
-  var uid = getSessionUserId(req);
-  if (!uid) {
-    return res.status(401).json({ error: "login_required", needLogin: true });
-  }
-  readUserState(uid, res);
-});
+app.get(
+  "/api/state",
+  ash(async function (req, res) {
+    if (await legacyMode()) {
+      return readLegacyState(res);
+    }
+    var uid = await getSessionUserId(req);
+    if (!uid) {
+      return res.status(401).json({ error: "login_required", needLogin: true });
+    }
+    return readUserState(uid, res);
+  })
+);
 
-app.put("/api/state", function (req, res) {
-  if (legacyMode()) {
-    if (!apiKeyOk(req)) {
-      return res.status(401).json({ error: "Unauthorized" });
+app.put(
+  "/api/state",
+  ash(async function (req, res) {
+    if (await legacyMode()) {
+      if (!apiKeyOk(req)) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      try {
+        var body = req.body;
+        if (!body || typeof body !== "object") {
+          return res.status(400).json({ error: "Invalid body" });
+        }
+        var copy = JSON.parse(JSON.stringify(body));
+        delete copy._serverEmpty;
+        delete copy._serverUpdatedAt;
+        var payload = JSON.stringify(copy);
+        var now = new Date().toISOString();
+        await store.upsertLegacyState(payload, now);
+        res.json({ ok: true, updated_at: now });
+      } catch (e) {
+        res.status(500).json({ error: String(e && e.message) });
+      }
+      return;
+    }
+    var uid = await getSessionUserId(req);
+    if (!uid) {
+      return res.status(401).json({ error: "login_required", needLogin: true });
     }
     try {
-      var body = req.body;
-      if (!body || typeof body !== "object") {
+      var body2 = req.body;
+      if (!body2 || typeof body2 !== "object") {
         return res.status(400).json({ error: "Invalid body" });
       }
-      var copy = JSON.parse(JSON.stringify(body));
-      delete copy._serverEmpty;
-      delete copy._serverUpdatedAt;
-      var payload = JSON.stringify(copy);
-      var now = new Date().toISOString();
-      db.prepare(
-        "INSERT INTO app_state (id, payload, updated_at) VALUES (1, ?, ?) " +
-          "ON CONFLICT(id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at"
-      ).run(payload, now);
-      res.json({ ok: true, updated_at: now });
+      var copy2 = JSON.parse(JSON.stringify(body2));
+      delete copy2._serverEmpty;
+      delete copy2._serverUpdatedAt;
+      var payload2 = JSON.stringify(copy2);
+      var now2 = new Date().toISOString();
+      await store.upsertUserState(uid, payload2, now2);
+      res.json({ ok: true, updated_at: now2 });
     } catch (e) {
       res.status(500).json({ error: String(e && e.message) });
     }
-    return;
-  }
-  var uid = getSessionUserId(req);
-  if (!uid) {
-    return res.status(401).json({ error: "login_required", needLogin: true });
-  }
-  try {
-    var body2 = req.body;
-    if (!body2 || typeof body2 !== "object") {
-      return res.status(400).json({ error: "Invalid body" });
-    }
-    var copy2 = JSON.parse(JSON.stringify(body2));
-    delete copy2._serverEmpty;
-    delete copy2._serverUpdatedAt;
-    var payload2 = JSON.stringify(copy2);
-    var now2 = new Date().toISOString();
-    db.prepare(
-      "INSERT INTO user_state (user_id, payload, updated_at) VALUES (?, ?, ?) " +
-        "ON CONFLICT(user_id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at"
-    ).run(uid, payload2, now2);
-    res.json({ ok: true, updated_at: now2 });
-  } catch (e) {
-    res.status(500).json({ error: String(e && e.message) });
-  }
-});
+  })
+);
 
 app.use(express.static(ROOT));
+
+app.use(function (err, req, res, next) {
+  console.error(err);
+  res.status(500).json({ error: err && err.message ? err.message : "Sunucu hatası" });
+});
 
 function lanIPv4Addresses() {
   var nets = os.networkInterfaces();
@@ -349,31 +319,43 @@ function lanIPv4Addresses() {
   return out;
 }
 
-app.listen(PORT, HOST, function () {
-  console.log("");
-  console.log("Çalışma Takip — bu bilgisayarda: http://localhost:" + PORT);
-  var ips = lanIPv4Addresses();
-  if (ips.length) {
-    console.log("Telefon / tablet (aynı Wi‑Fi, tarayıcıda açın):");
-    ips.forEach(function (ip) {
-      console.log("  http://" + ip + ":" + PORT);
+store
+  .init()
+  .then(function (info) {
+    app.listen(PORT, HOST, function () {
+      console.log("");
+      console.log("Çalışma Takip — bu bilgisayarda: http://localhost:" + PORT);
+      var ips = lanIPv4Addresses();
+      if (ips.length) {
+        console.log("Telefon / tablet (aynı Wi‑Fi, tarayıcıda açın):");
+        ips.forEach(function (ip) {
+          console.log("  http://" + ip + ":" + PORT);
+        });
+      } else {
+        console.log("Yerel IP bulunamadı; Wi‑Fi’ye bağlı olduğunuzdan emin olun.");
+      }
+      console.log("");
+      if (info.mode === "postgres") {
+        console.log("Veritabanı: PostgreSQL (DATABASE_URL — bulut, kalıcı)");
+      } else {
+        console.log("Veritabanı:", store.getSqlitePath());
+        if (process.env.CALISMA_DATA_DIR) {
+          console.log("  (CALISMA_DATA_DIR ile kalıcı disk kullanılıyor.)");
+        }
+      }
+      console.log("İpucu: Windows Güvenlik Duvarı izin isteyebilir; izin verin.");
+      console.log("İnternet (farklı Wi‑Fi): proje kökünde veya server klasöründe  npm run tunnel");
+      console.log(
+        "Hesap: Sunucuda en az bir kullanıcı kayıtlıysa /api/state oturum (Ayarlar → Giriş) ister."
+      );
+      if (API_KEY) console.log("API anahtarı: CALISMA_API_KEY aktif (hesap yokken PUT için X-API-Key gerekir).");
+      if (PRIVATE_PASS) {
+        console.log("Özel erişim: PRIVATE_ACCESS_PASS aktif (sadece kullanıcı adı + şifre ile girilir).");
+        console.log("  Kullanıcı adı: " + (PRIVATE_USER || "ben") + " (PRIVATE_ACCESS_USER ile değiştirilebilir)");
+      }
     });
-  } else {
-    console.log("Yerel IP bulunamadı; Wi‑Fi’ye bağlı olduğunuzdan emin olun.");
-  }
-  console.log("");
-  console.log("Veritabanı:", DB_PATH);
-  if (process.env.CALISMA_DATA_DIR) {
-    console.log("  (CALISMA_DATA_DIR ile kalıcı disk kullanılıyor.)");
-  }
-  console.log("İpucu: Windows Güvenlik Duvarı izin isteyebilir; izin verin.");
-  console.log("İnternet (farklı Wi‑Fi): proje kökünde veya server klasöründe  npm run tunnel");
-  console.log(
-    "Hesap: Sunucuda en az bir kullanıcı kayıtlıysa /api/state oturum (Ayarlar → Giriş) ister."
-  );
-  if (API_KEY) console.log("API anahtarı: CALISMA_API_KEY aktif (hesap yokken PUT için X-API-Key gerekir).");
-  if (PRIVATE_PASS) {
-    console.log("Özel erişim: PRIVATE_ACCESS_PASS aktif (sadece kullanıcı adı + şifre ile girilir).");
-    console.log("  Kullanıcı adı: " + (PRIVATE_USER || "ben") + " (PRIVATE_ACCESS_USER ile değiştirilebilir)");
-  }
-});
+  })
+  .catch(function (e) {
+    console.error("Başlatılamadı:", e);
+    process.exit(1);
+  });

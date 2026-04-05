@@ -11,11 +11,11 @@ Kişisel çalışma / YDS / kitap / yatırım takibi — tarayıcıda çalışı
 - İnternet senkronu ve hesap için **Ayarlar** ve **Giriş** sayfalarına bakın.
 - **Ayarlar → Günlük otomatik yedek:** seçilen saatte (varsayılan 23:58) tarayıcı açıkken tüm veriyi JSON olarak indirir; sekme kapalıysa o gün tetiklenmez.
 - Bu proje **Cursor** ile geliştirilmiştir.
-- **Render ücretsiz** planda dosya sistemi kalıcı değildir; sunucu uyandığında veya yeniden deploy edildiğinde SQLite veritabanı (hesaplar) sıfırlanabilir. O zaman aynı adreste **Kayıt ol** ile hesabı yeniden oluşturmanız gerekir. Kalıcı veri için Render’da **Disk** (ücretli) + ortam değişkeni `CALISMA_DATA_DIR` veya harici veritabanı gerekir.
+- **Kalıcı veri (önerilen):** [Neon](https://neon.tech) veya benzeri **bulut PostgreSQL** ücretsiz katmanı (ör. proje başına ~0,5 GB; çok proje açarak toplam alan artırılabilir). Sunucuda ortam değişkeni **`DATABASE_URL`** bu bağlantıyı gösterir; tablolar ilk çalıştırmada oluşur. **Render**’da Environment → `DATABASE_URL` = Neon’daki *Connection string* (gizli tutun). `DATABASE_URL` **yoksa** sunucu yereldeki **SQLite** dosyasını kullanır (Render ücretsiz diskte bu dosya sıfırlanabilir).
 
 ## Yerel çalıştırma
 
-Sunucu (SQLite API + statik dosyalar):
+Sunucu (SQLite veya `DATABASE_URL` ile PostgreSQL + statik dosyalar):
 
 ```bash
 cd server
