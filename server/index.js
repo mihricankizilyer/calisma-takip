@@ -185,7 +185,7 @@ function readUserState(userId, res) {
 app.post("/api/auth/register", function (req, res) {
   try {
     var username = req.body && req.body.username != null ? String(req.body.username).trim() : "";
-    var password = req.body && req.body.password != null ? String(req.body.password) : "";
+    var password = req.body && req.body.password != null ? String(req.body.password).trim() : "";
     if (!username || !password) {
       return res.status(400).json({ error: "Kullanıcı adı ve şifre gerekli." });
     }
@@ -230,13 +230,20 @@ app.post("/api/auth/register", function (req, res) {
 app.post("/api/auth/login", function (req, res) {
   try {
     var username = req.body && req.body.username != null ? String(req.body.username).trim() : "";
-    var password = req.body && req.body.password != null ? String(req.body.password) : "";
+    var password = req.body && req.body.password != null ? String(req.body.password).trim() : "";
     if (!username || !password) {
       return res.status(400).json({ error: "Kullanıcı adı ve şifre gerekli." });
     }
     var user = db.prepare("SELECT id, password_hash FROM users WHERE username = ? COLLATE NOCASE").get(username);
-    if (!user || !verifyPassword(password, user.password_hash)) {
-      return res.status(401).json({ error: "Kullanıcı adı veya şifre yanlış." });
+    if (!user) {
+      return res.status(401).json({
+        error:
+          "Bu sunucuda bu kullanıcı adıyla kayıt yok. Önce bu sitede Kayıt ol kullanın. " +
+          "Bilgisayarda kayıt edip telefonda Render adresiyle giriyorsanız: hesap o sunucuda olmalı (aynı adres).",
+      });
+    }
+    if (!verifyPassword(password, user.password_hash)) {
+      return res.status(401).json({ error: "Şifre yanlış." });
     }
     var token = createSession(user.id);
     res.json({ ok: true, token: token, username: username });

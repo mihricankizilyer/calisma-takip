@@ -62,14 +62,18 @@
 
     function doLogin() {
       var u = userEl ? userEl.value.trim() : "";
-      var p = passEl ? passEl.value : "";
+      var p = passEl ? String(passEl.value).trim() : "";
       showMsg(msgEl, "");
       btnLogin.disabled = true;
       btnReg.disabled = true;
       apiPost("/api/auth/login", { username: u, password: p })
         .then(function (r) {
-          return r.json().then(function (j) {
-            if (!r.ok) throw new Error((j && j.error) || r.status);
+          return r.text().then(function (t) {
+            var j = null;
+            try {
+              j = t ? JSON.parse(t) : null;
+            } catch (e) {}
+            if (!r.ok) throw new Error((j && j.error) || "Sunucu yanıtı okunamadı (" + r.status + ").");
             return j;
           });
         })
@@ -90,14 +94,18 @@
 
     function doRegister() {
       var u = userEl ? userEl.value.trim() : "";
-      var p = passEl ? passEl.value : "";
+      var p = passEl ? String(passEl.value).trim() : "";
       showMsg(msgEl, "");
       btnLogin.disabled = true;
       btnReg.disabled = true;
       apiPost("/api/auth/register", { username: u, password: p })
         .then(function (r) {
-          return r.json().then(function (j) {
-            if (!r.ok) throw new Error((j && j.error) || r.status);
+          return r.text().then(function (t) {
+            var j = null;
+            try {
+              j = t ? JSON.parse(t) : null;
+            } catch (e) {}
+            if (!r.ok) throw new Error((j && j.error) || "Sunucu yanıtı okunamadı (" + r.status + ").");
             return j;
           });
         })
