@@ -12,6 +12,30 @@
       baseEl.value = getCalismaApiBase() || "";
     }
 
+    var autoExportEn = q("auto-export-enabled");
+    var autoExportTime = q("auto-export-time");
+    if (autoExportEn) {
+      autoExportEn.checked = localStorage.getItem("calisma_auto_export_enabled") !== "0";
+    }
+    if (autoExportTime) {
+      autoExportTime.value = localStorage.getItem("calisma_auto_export_time") || "23:58";
+    }
+
+    var btnAutoExportSave = q("btn-auto-export-save");
+    if (btnAutoExportSave) {
+      btnAutoExportSave.addEventListener("click", function () {
+        try {
+          if (autoExportEn) {
+            localStorage.setItem("calisma_auto_export_enabled", autoExportEn.checked ? "1" : "0");
+          }
+          if (autoExportTime && autoExportTime.value) {
+            localStorage.setItem("calisma_auto_export_time", autoExportTime.value);
+          }
+        } catch (e) {}
+        alert("Yedek ayarı kaydedildi.");
+      });
+    }
+
     var btnSave = q("btn-sync-save");
     if (btnSave) {
       btnSave.addEventListener("click", function () {
@@ -21,6 +45,14 @@
         if (typeof setCalismaApiKey === "function") {
           if (nk) setCalismaApiKey(nk);
         }
+        try {
+          if (autoExportEn) {
+            localStorage.setItem("calisma_auto_export_enabled", autoExportEn.checked ? "1" : "0");
+          }
+          if (autoExportTime && autoExportTime.value) {
+            localStorage.setItem("calisma_auto_export_time", autoExportTime.value);
+          }
+        } catch (e) {}
         alert("Kaydedildi. Diğer sayfaları yenileyin.");
         if (keyEl) keyEl.value = "";
       });

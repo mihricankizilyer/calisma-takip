@@ -9,6 +9,7 @@ Kişisel çalışma / YDS / kitap / yatırım takibi — tarayıcıda çalışı
 ## Notlar
 
 - İnternet senkronu ve hesap için **Ayarlar** ve **Giriş** sayfalarına bakın.
+- **Ayarlar → Günlük otomatik yedek:** seçilen saatte (varsayılan 23:58) tarayıcı açıkken tüm veriyi JSON olarak indirir; sekme kapalıysa o gün tetiklenmez.
 - Bu proje **Cursor** ile geliştirilmiştir.
 - **Render ücretsiz** planda dosya sistemi kalıcı değildir; sunucu uyandığında veya yeniden deploy edildiğinde SQLite veritabanı (hesaplar) sıfırlanabilir. O zaman aynı adreste **Kayıt ol** ile hesabı yeniden oluşturmanız gerekir. Kalıcı veri için Render’da **Disk** (ücretli) + ortam değişkeni `CALISMA_DATA_DIR` veya harici veritabanı gerekir.
 

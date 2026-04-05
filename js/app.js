@@ -914,6 +914,76 @@
 
   var state = loadState();
 
+  function flushPendingSave() {
+    if (_serverSaveTimer) {
+      clearTimeout(_serverSaveTimer);
+      _serverSaveTimer = null;
+      pushStateToServer(state);
+    }
+    persistStateLocal(state);
+  }
+
+  function downloadJsonBackup(filename) {
+    if (typeof filename !== "string" || !filename) filename = "calisma-takip-yedek.json";
+    flushPendingSave();
+    var snap = loadState();
+    var blob = new Blob([JSON.stringify(snap, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function pad2auto(n) {
+    return n < 10 ? "0" + n : String(n);
+  }
+
+  function localYmdAuto(d) {
+    return d.getFullYear() + "-" + pad2auto(d.getMonth() + 1) + "-" + pad2auto(d.getDate());
+  }
+
+  function getAutoExportSettings() {
+    try {
+      if (localStorage.getItem("calisma_auto_export_enabled") === "0") return null;
+      var t = localStorage.getItem("calisma_auto_export_time") || "23:58";
+      var parts = String(t).split(":");
+      var h = parseInt(parts[0], 10);
+      var mi = parseInt(parts[1], 10);
+      if (isNaN(h)) h = 23;
+      if (isNaN(mi)) mi = 58;
+      h = Math.min(23, Math.max(0, h));
+      mi = Math.min(59, Math.max(0, mi));
+      return { hour: h, minute: mi };
+    } catch (e) {
+      return { hour: 23, minute: 58 };
+    }
+  }
+
+  function runAutoExportIfDue() {
+    var settings = getAutoExportSettings();
+    if (!settings) return;
+    var now = new Date();
+    var ymd = localYmdAuto(now);
+    if (localStorage.getItem("calisma_auto_export_done_date") === ymd) return;
+    var minutesNow = now.getHours() * 60 + now.getMinutes();
+    var minutesTarget = settings.hour * 60 + settings.minute;
+    if (minutesNow < minutesTarget) return;
+    try {
+      downloadJsonBackup("calisma-takip-yedek-" + ymd + "-otomatik.json");
+      localStorage.setItem("calisma_auto_export_done_date", ymd);
+    } catch (e) {}
+  }
+
+  function initAutoExportScheduler() {
+    if (typeof localStorage === "undefined") return;
+    runAutoExportIfDue();
+    setInterval(runAutoExportIfDue, 60000);
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") runAutoExportIfDue();
+    });
+  }
+
   /** YDS: sınav tarihi girildikten sonra alan gizlenir; düzenlemede tekrar açılır */
   var ydsExamDateEditing = false;
   var ydsScoreEditing = false;
@@ -3107,12 +3177,7 @@
   function bindExportClick() {
     if (!el.btnExport) return;
     el.btnExport.addEventListener("click", function () {
-      var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "calisma-takip-yedek.json";
-      a.click();
-      URL.revokeObjectURL(a.href);
+      downloadJsonBackup("calisma-takip-yedek.json");
     });
   }
 
@@ -3291,12 +3356,7 @@
     });
 
     document.getElementById("btn-export-cal").addEventListener("click", function () {
-      var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "calisma-takip-yedek.json";
-      a.click();
-      URL.revokeObjectURL(a.href);
+      downloadJsonBackup("calisma-takip-yedek.json");
     });
 
     document.getElementById("import-file-cal").addEventListener("change", function () {
@@ -3796,4 +3856,5 @@
   }
 
   initServerSync();
+  initAutoExportScheduler();
 })();
