@@ -1,0 +1,20 @@
+{
+  "name": "calisma-takip-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "SQLite API for Çalışma Takip",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "tunnel": "npx --yes concurrently -k \"node index.js\" \"npx --yes wait-on http://127.0.0.1:3000 && npx --yes cloudflared tunnel --url http://127.0.0.1:3000\""
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "wait-on": "^8.0.1"
+  }
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Çalışma Takip — Geçmiş kayıtlar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="gecmis" class="page-gecmis">
+  <div class="shell">
+    <aside class="sidebar" aria-label="Ana menü">
+      <div class="sidebar__top">
+        <a href="index.html" class="sidebar__brand">
+          <span class="sidebar__logo" aria-hidden="true">◆</span>
+          <span class="sidebar__app-name">Çalışma Takip</span>
+        </a>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="index.html" class="sidebar__link">Ana sayfa</a>
+        <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
+        <a href="gecmis.html" class="sidebar__link sidebar__link--active" aria-current="page">Geçmiş kayıtlar</a>
+        <a href="yds.html" class="sidebar__link">YDS</a>
+        <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
+        <a href="yatirim.html" class="sidebar__link">Yatırım</a>
+        <a href="calendar.html" class="sidebar__link">Takvim</a>
+        <a href="giris.html" class="sidebar__link">Giriş</a>
+        <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
+      </nav>
+    </aside>
+
+    <div class="shell__main">
+      <header class="header">
+        <div class="header__brand header__brand--compact">
+          <div>
+            <h1 class="header__page-title">Geçmiş kayıtlar</h1>
+          </div>
+        </div>
+        <div class="header__actions">
+          <a href="yeni-kayit.html" class="btn btn--primary">Kayıt ekle</a>
+          <button type="button" class="btn btn--ghost" id="btn-export" title="Veriyi JSON olarak indir">Dışa aktar</button>
+          <label class="btn btn--ghost btn--file">
+            İçe aktar
+            <input type="file" id="import-file" accept="application/json" hidden />
+          </label>
+        </div>
+      </header>
+
+      <div class="shell__content shell__content--gecmis">
+        <section class="panel panel--dashboard-charts panel--gecmis-charts" aria-labelledby="gecmis-charts-title">
+          <div class="panel__head-row">
+            <h2 id="gecmis-charts-title" class="panel__h2">Grafikler</h2>
+            <p class="panel__sub">Bu hafta ve son 7 gün — süre (dakika)</p>
+          </div>
+          <div class="charts-grid">
+            <article class="chart-card">
+              <h3 class="chart-card__title">Bu hafta kategori dağılımı</h3>
+              <p class="chart-empty" hidden>Bu hafta henüz kayıt yok.</p>
+              <div class="chart-card__canvas-wrap">
+                <canvas id="chart-week-categories" role="img" aria-label="Bu hafta kategori dağılımı grafiği"></canvas>
+              </div>
+            </article>
+            <article class="chart-card">
+              <h3 class="chart-card__title">Son 7 gün</h3>
+              <p class="chart-empty" hidden>Son 7 günde kayıt yok.</p>
+              <div class="chart-card__canvas-wrap">
+                <canvas id="chart-daily-7" role="img" aria-label="Son yedi gün çalışma süreleri grafiği"></canvas>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel panel--list panel--list-page panel--gecmis-list" aria-labelledby="list-title">
+          <div class="panel__head-row panel__head-row--list">
+            <div class="panel__head-text">
+              <h2 id="list-title" class="panel__h2">Kayıtlar</h2>
+              <p class="panel__sub">Tüm oturumlar — kategori ile süzebilirsin</p>
+            </div>
+            <div class="filters filters--gecmis">
+              <select id="filter-category" aria-label="Kategoriye göre filtre">
+                <option value="">Tümü</option>
+                <option value="english">YDS</option>
+                <option value="technical">Teknik</option>
+                <option value="book">Kitap</option>
+                <option value="investment">Yatırım</option>
+              </select>
+            </div>
+          </div>
+          <div class="session-list-wrap">
+            <ul class="session-list" id="session-list"></ul>
+          </div>
+          <p class="empty empty--gecmis" id="empty-msg">Kayıt yok. <a href="yeni-kayit.html">Ekle</a></p>
+        </section>
+
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="js/sync-api.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>

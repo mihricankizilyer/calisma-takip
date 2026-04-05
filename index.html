@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Çalışma Takip — Ana sayfa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="dashboard" class="page-dashboard">
+  <div class="shell">
+    <aside class="sidebar" aria-label="Ana menü">
+      <div class="sidebar__top">
+        <a href="index.html" class="sidebar__brand">
+          <span class="sidebar__logo" aria-hidden="true">◆</span>
+          <span class="sidebar__app-name">Çalışma Takip</span>
+        </a>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="index.html" class="sidebar__link sidebar__link--active" aria-current="page">Ana sayfa</a>
+        <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
+        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
+        <a href="yds.html" class="sidebar__link">YDS</a>
+        <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
+        <a href="yatirim.html" class="sidebar__link">Yatırım</a>
+        <a href="calendar.html" class="sidebar__link">Takvim</a>
+        <a href="giris.html" class="sidebar__link">Giriş</a>
+        <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
+      </nav>
+    </aside>
+
+    <div class="shell__main">
+      <header class="header">
+        <div class="header__brand header__brand--compact">
+          <div>
+            <h1 class="header__page-title">Özet</h1>
+          </div>
+        </div>
+        <div class="header__actions">
+          <a href="yeni-kayit.html" class="btn btn--primary">Kayıt ekle</a>
+          <button type="button" class="btn btn--ghost" id="btn-export" title="Veriyi JSON olarak indir">Dışa aktar</button>
+          <label class="btn btn--ghost btn--file">
+            İçe aktar
+            <input type="file" id="import-file" accept="application/json" hidden />
+          </label>
+        </div>
+      </header>
+
+      <div class="shell__content shell__content--dashboard">
+        <section class="streak-hero panel panel--dashboard-streak" aria-labelledby="streak-title">
+          <div class="panel__head-row">
+            <h2 id="streak-title" class="panel__h2">Günlük seri</h2>
+            <p class="panel__sub">YDS</p>
+          </div>
+          <div class="streak-hero__grid">
+            <div class="streak-hero__main">
+              <div class="streak-hero__stats">
+                <div class="streak-big">
+                  <span class="streak-big__n" id="streak-current">0</span>
+                  <span class="streak-big__unit">gün</span>
+                </div>
+                <div class="streak-side">
+                  <span class="streak-side__label">En uzun seri</span>
+                  <span class="streak-side__val" id="streak-best">0 gün</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel--stats panel--dashboard-stats" aria-labelledby="stats-title">
+          <div class="panel__head-row">
+            <h2 id="stats-title" class="panel__h2">Bu hafta</h2>
+            <p class="panel__sub">Dağılım</p>
+          </div>
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span class="stat-card__label">Bu hafta toplam</span>
+              <span class="stat-card__value" id="stat-week-total">0</span>
+            </article>
+            <article class="stat-card stat-card--en">
+              <span class="stat-card__label">YDS</span>
+              <span class="stat-card__value" id="stat-week-en">0</span>
+              <div class="stat-card__bar"><span id="bar-en"></span></div>
+            </article>
+            <article class="stat-card stat-card--tech">
+              <span class="stat-card__label">Teknik</span>
+              <span class="stat-card__value" id="stat-week-tech">0</span>
+              <div class="stat-card__bar"><span id="bar-tech"></span></div>
+            </article>
+            <article class="stat-card stat-card--book">
+              <span class="stat-card__label">Kitap</span>
+              <span class="stat-card__value" id="stat-week-book">0</span>
+              <div class="stat-card__bar"><span id="bar-book"></span></div>
+            </article>
+            <article class="stat-card stat-card--invest">
+              <span class="stat-card__label">Yatırım</span>
+              <span class="stat-card__value" id="stat-week-inv">0</span>
+              <div class="stat-card__bar"><span id="bar-inv"></span></div>
+            </article>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+  <script src="js/sync-api.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>

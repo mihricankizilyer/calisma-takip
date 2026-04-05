@@ -1,0 +1,8 @@
+{
+  "name": "calisma-takip",
+  "private": true,
+  "scripts": {
+    "server": "npm start --prefix server",
+    "tunnel": "npm run tunnel --prefix server"
+  }
+}

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Çalışma Takip — Yeni kayıt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="yeni" class="page-yeni">
+  <div class="shell">
+    <aside class="sidebar" aria-label="Ana menü">
+      <div class="sidebar__top">
+        <a href="index.html" class="sidebar__brand">
+          <span class="sidebar__logo" aria-hidden="true">◆</span>
+          <span class="sidebar__app-name">Çalışma Takip</span>
+        </a>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="index.html" class="sidebar__link">Ana sayfa</a>
+        <a href="yeni-kayit.html" class="sidebar__link sidebar__link--active" aria-current="page">Yeni kayıt</a>
+        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
+        <a href="yds.html" class="sidebar__link">YDS</a>
+        <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
+        <a href="yatirim.html" class="sidebar__link">Yatırım</a>
+        <a href="calendar.html" class="sidebar__link">Takvim</a>
+        <a href="giris.html" class="sidebar__link">Giriş</a>
+        <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
+      </nav>
+    </aside>
+
+    <div class="shell__main">
+      <header class="header">
+        <div class="header__brand header__brand--compact">
+          <div>
+            <h1 class="header__page-title">Yeni kayıt</h1>
+          </div>
+        </div>
+        <div class="header__actions">
+          <a href="gecmis.html" class="btn btn--primary">Geçmiş</a>
+          <button type="button" class="btn btn--ghost" id="btn-export" title="Veriyi JSON olarak indir">Dışa aktar</button>
+          <label class="btn btn--ghost btn--file">
+            İçe aktar
+            <input type="file" id="import-file" accept="application/json" hidden />
+          </label>
+        </div>
+      </header>
+
+      <div class="shell__content shell__content--yeni">
+        <section class="panel panel--timer panel--timer-page panel--yeni-form" aria-labelledby="timer-title">
+          <div class="panel__head-row">
+            <h2 id="timer-title" class="panel__h2">Çalışma kaydı</h2>
+            <p class="panel__sub">YDS türü seç → ilgili alanlar</p>
+          </div>
+
+          <div class="timer-display" id="timer-display">00:00</div>
+          <div class="timer-controls">
+            <button type="button" class="btn btn--primary" id="btn-timer-start">Başlat</button>
+            <button type="button" class="btn" id="btn-timer-pause" disabled>Duraklat</button>
+            <button type="button" class="btn btn--ghost" id="btn-timer-reset">Sıfırla</button>
+          </div>
+
+          <form class="form" id="form-session">
+            <div class="form__row">
+              <label for="category">Kategori</label>
+              <select id="category" name="category" required>
+                <option value="english">YDS</option>
+                <option value="technical">Teknik</option>
+                <option value="book">Kitap okuma</option>
+                <option value="investment">Yatırım</option>
+              </select>
+            </div>
+            <div class="form-block form-block--hidden" id="wrap-en-detail">
+              <p class="form-block__lead">Önce YDS çalışma türünü seç; sadece o alanlar görünür.</p>
+              <div class="form__row">
+                <label for="en-subtype">YDS çalışma türü</label>
+                <select id="en-subtype" autocomplete="off">
+                  <option value="">— Tür seçin —</option>
+                  <option value="grammar">Grammar</option>
+                  <option value="cloze">Cloze</option>
+                  <option value="tr_eng">TR → ENG</option>
+                  <option value="eng_tr">ENG → TR</option>
+                  <option value="passage">Passage</option>
+                  <option value="paragraf">Paragraf atama</option>
+                  <option value="deneme">Deneme</option>
+                  <option value="kelime">Kelime ezber</option>
+                </select>
+              </div>
+
+              <div class="form-en-panel form-en-panel--hidden" data-en-panel="grammar">
+                <div class="form__row">
+                  <label for="en-q-grammar">Soru sayısı</label>
+                  <input type="number" id="en-q-grammar" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+                <div class="form__row">
+                  <label for="en-grammar-min">Grammar çalışma süresi (dakika)</label>
+                  <input type="number" id="en-grammar-min" min="0" max="1440" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+              </div>
+
+              <div class="form-en-panel form-en-panel--hidden" data-en-panel="cloze">
+                <div class="form__row">
+                  <label for="en-q-cloze">Soru sayısı</label>
+                  <input type="number" id="en-q-cloze" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+              </div>
+
+              <div class="form-en-panel form-en-panel--hidden" data-en-panel="tr_eng">
+                <div class="form__row">
+                  <label for="en-q-tr-eng">Soru sayısı</label>
+                  <input type="number" id="en-q-tr-eng" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+              </div>
+
+              <div class="form-en-panel form-en-panel--hidden" data-en-panel="eng_tr">
+                <div class="form__row">
+                  <label for="en-q-eng-tr">Soru sayısı</label>
+                  <input type="number" id="en-q-eng-tr" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+              </div>
+
+              <div class="form-en-panel form-en-panel--hidden" data-en-panel="passage">
+                <div class="form__row">
+                  <label for="en-q-passage">Soru sayısı</label>
+                  <input type="number" id="en-q-passage" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+              </div>
+
+              <div class="form-en-panel form-en-panel--hidden" data-en-panel="paragraf">
+                <div class="form__row">
+                  <label for="en-q-paragraf">Soru sayısı</label>
+                  <input type="number" id="en-q-paragraf" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+              </div>
+
+              <div class="form-en-panel form-en-panel--hidden" data-en-panel="deneme">
+                <div class="form__row">
+                  <label for="en-q-deneme">Toplam soru</label>
+                  <input type="number" id="en-q-deneme" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+              </div>
+
+              <div class="form-block form-en-panel form-en-panel--hidden" id="wrap-en-dy">
+                <p class="form-block__lead form-block__lead--inline">Soru neti (isteğe bağlı)</p>
+                <div class="form-en-dy-grid">
+                  <div class="form__row">
+                    <label for="en-dogru">Doğru</label>
+                    <input type="number" id="en-dogru" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                  </div>
+                  <div class="form__row">
+                    <label for="en-yanlis">Yanlış</label>
+                    <input type="number" id="en-yanlis" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                  </div>
+                  <div class="form__row">
+                    <label for="en-bos">Boş</label>
+                    <input type="number" id="en-bos" min="0" max="999" step="1" placeholder="0" inputmode="numeric" />
+                  </div>
+                </div>
+                <p class="form-en-dy-hint">Toplam: doğru + yanlış + boş, soru sayısını geçmemeli.</p>
+              </div>
+
+              <div class="form__row form-en-panel form-en-panel--hidden" id="wrap-en-other-min">
+                <label for="en-other-min">Bu oturum süresi (dakika)</label>
+                <input type="number" id="en-other-min" min="0" max="1440" step="1" placeholder="0" inputmode="numeric" />
+              </div>
+
+              <div class="form-en-panel form-en-panel--hidden" data-en-panel="kelime">
+                <div class="form__row">
+                  <label for="en-kelime-ezber-min">Kelime ezberleme süresi (dakika)</label>
+                  <input type="number" id="en-kelime-ezber-min" min="0" max="1440" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+                <div class="form__row">
+                  <label for="en-kelime-sayisi">Kelime sayısı (ezberlenen)</label>
+                  <input type="number" id="en-kelime-sayisi" min="0" max="99999" step="1" placeholder="0" inputmode="numeric" />
+                </div>
+              </div>
+            </div>
+            <div class="form__row form__row--hidden" id="wrap-tech-topic">
+              <label for="tech-topic">Konu / teknoloji</label>
+              <input type="text" id="tech-topic" name="techTopic" placeholder="Örn. React, SQL" autocomplete="off" />
+            </div>
+
+            <div class="form-block form-block--hidden" id="wrap-book">
+              <div class="form__row">
+                <label for="book-select">Devam veya yeni</label>
+                <select id="book-select">
+                  <option value="new">+ Yeni kitap ekle (başlık aşağıda)</option>
+                </select>
+              </div>
+              <div id="wrap-book-new-only" class="book-new-only">
+                <div class="form__row">
+                  <label for="book-title-new">Kitap adı (yeni eklerken)</label>
+                  <input type="text" id="book-title-new" placeholder="Örn. Atomic Habits" autocomplete="off" />
+                </div>
+                <div class="form__row">
+                  <label for="book-author">Yazar (isteğe bağlı)</label>
+                  <input type="text" id="book-author" placeholder="Yazar" autocomplete="off" />
+                </div>
+              </div>
+              <div class="form__row">
+                <label for="book-pages-read">Bu oturumda okunan sayfa</label>
+                <input type="number" id="book-pages-read" min="1" max="2000" step="1" placeholder="Örn. 25" />
+              </div>
+              <div class="form__row">
+                <label for="book-total-pages">Kitabın toplam sayfası (isteğe bağlı)</label>
+                <input type="number" id="book-total-pages" min="1" max="10000" step="1" placeholder="Biliyorsan gir" />
+              </div>
+              <div class="form__row">
+                <label class="checkbox-row">
+                  <input type="checkbox" id="book-finished" />
+                  <span>Kitabı bitirdim (bitiş tarihi: alttaki bitiş alanı veya bugün)</span>
+                </label>
+              </div>
+              <div class="form__row">
+                <label for="book-date-start">Başlangıç tarihi (isteğe bağlı)</label>
+                <input type="date" id="book-date-start" />
+              </div>
+              <div class="form__row">
+                <label for="book-date-end">Bitiş tarihi (isteğe bağlı)</label>
+                <input type="date" id="book-date-end" />
+              </div>
+            </div>
+
+            <div class="form-block form-block--hidden" id="wrap-invest">
+              <div class="form__row">
+                <label for="invest-asset">Varlık / konu</label>
+                <input type="text" id="invest-asset" placeholder="Örn. BIST fon, altın, hisse" autocomplete="off" />
+              </div>
+              <div class="form__row">
+                <label for="invest-amount">Tutar (₺, isteğe bağlı)</label>
+                <input type="number" id="invest-amount" min="0" step="0.01" placeholder="Örn. 1500" />
+              </div>
+              <div class="form__row">
+                <label for="invest-share-price">Hisse başına alış fiyatı (₺, isteğe bağlı)</label>
+                <input type="number" id="invest-share-price" min="0" step="0.01" placeholder="Örn. 42,50 (1 adet kaçtan alındı)" />
+              </div>
+              <div class="form__row">
+                <label for="invest-action">Tür</label>
+                <select id="invest-action">
+                  <option value="arastirma">Araştırma / not</option>
+                  <option value="alis">Alış</option>
+                  <option value="satis">Satış</option>
+                  <option value="gelir">Gelir / temettü</option>
+                  <option value="diger">Diğer</option>
+                </select>
+              </div>
+              <div class="form__row">
+                <label for="invest-date">İşlem tarihi</label>
+                <input type="date" id="invest-date" />
+              </div>
+              <div class="form__row">
+                <label for="invest-time">İşlem saati (isteğe bağlı)</label>
+                <input type="time" id="invest-time" step="60" />
+              </div>
+            </div>
+
+            <div class="form__row" id="wrap-duration">
+              <label for="duration">Süre (dakika)</label>
+              <div class="duration-row">
+                <input type="number" id="duration" name="duration" min="1" max="1440" step="1" placeholder="Zamanlayıcı veya elle" />
+                <button type="button" class="btn btn--small" id="btn-use-timer">Zamanlayıcıyı kullan</button>
+              </div>
+            </div>
+            <div class="form__row">
+              <label for="note">Not</label>
+              <textarea id="note" name="note" rows="3" placeholder="İsteğe bağlı not…"></textarea>
+            </div>
+            <div class="form__row">
+              <label for="tags">Etiketler (virgülle)</label>
+              <input type="text" id="tags" name="tags" placeholder="örn. roman, uzun vade" autocomplete="off" />
+            </div>
+            <button type="submit" class="btn btn--primary btn--block">Kaydı ekle</button>
+          </form>
+        </section>
+
+      </div>
+    </div>
+  </div>
+  <script src="js/sync-api.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>

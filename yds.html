@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Çalışma Takip — YDS süreci</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="yds" class="page-yds">
+  <div class="shell">
+    <aside class="sidebar" aria-label="Ana menü">
+      <div class="sidebar__top">
+        <a href="index.html" class="sidebar__brand">
+          <span class="sidebar__logo" aria-hidden="true">◆</span>
+          <span class="sidebar__app-name">Çalışma Takip</span>
+        </a>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="index.html" class="sidebar__link">Ana sayfa</a>
+        <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
+        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
+        <a href="yds.html" class="sidebar__link sidebar__link--active" aria-current="page">YDS</a>
+        <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
+        <a href="yatirim.html" class="sidebar__link">Yatırım</a>
+        <a href="calendar.html" class="sidebar__link">Takvim</a>
+        <a href="giris.html" class="sidebar__link">Giriş</a>
+        <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
+      </nav>
+    </aside>
+
+    <div class="shell__main">
+      <header class="header">
+        <div class="header__brand header__brand--compact">
+          <div>
+            <h1 class="header__page-title">YDS çalışma süreci</h1>
+          </div>
+        </div>
+        <div class="header__actions">
+          <a href="yeni-kayit.html" class="btn btn--primary">YDS kaydı ekle</a>
+          <button type="button" class="btn btn--ghost" id="btn-export" title="Veriyi JSON olarak indir">Dışa aktar</button>
+          <label class="btn btn--ghost btn--file">
+            İçe aktar
+            <input type="file" id="import-file" accept="application/json" hidden />
+          </label>
+        </div>
+      </header>
+
+      <div class="shell__content shell__content--yds" id="yds-dashboard">
+        <section class="panel panel--yds-streak" aria-labelledby="yds-streak-title">
+          <div class="panel__head-row">
+            <h2 id="yds-streak-title" class="panel__h2">YDS günlük zincir</h2>
+          </div>
+          <div class="yds-streak-hero">
+            <div class="yds-streak-hero__main">
+              <div class="yds-streak-big">
+                <span class="yds-streak-big__n" id="yds-streak-current">0</span>
+                <span class="yds-streak-big__unit">gün</span>
+              </div>
+              <div class="yds-streak-side">
+                <span class="yds-streak-side__label">En uzun</span>
+                <span class="yds-streak-side__val" id="yds-streak-best">0 gün</span>
+              </div>
+            </div>
+            <p class="yds-streak-today" id="yds-streak-today-msg" role="status"></p>
+          </div>
+          <div class="yds-chain" id="yds-chain-row"></div>
+        </section>
+
+        <section class="panel panel--yds-hero" aria-labelledby="yds-hero-title">
+          <div class="panel__head-row">
+            <h2 id="yds-hero-title" class="panel__h2">Hedef</h2>
+          </div>
+          <div class="yds-hero-grid">
+            <div class="yds-field" id="wrap-yds-exam-field">
+              <div id="yds-exam-date-edit-block">
+                <label for="yds-exam-date">Hedef sınav tarihi</label>
+                <input type="date" id="yds-exam-date" autocomplete="off" />
+              </div>
+            </div>
+            <div class="yds-field" id="wrap-yds-score-field">
+              <div id="yds-score-edit-block">
+                <label for="yds-target-score">Hedef puan (örn. 55+)</label>
+                <input type="text" id="yds-target-score" placeholder="İsteğe bağlı" autocomplete="off" />
+              </div>
+            </div>
+            <div class="yds-field" id="wrap-yds-application-field">
+              <div id="yds-application-date-edit-block">
+                <label for="yds-application-date">Başvuru son tarihi</label>
+                <input type="date" id="yds-application-date" autocomplete="off" />
+              </div>
+            </div>
+            <div class="yds-field yds-field--span yds-hero-summary" id="yds-hero-summary-row" hidden>
+              <div class="yds-hero-summary-card" id="yds-hero-summary-line">
+                <div class="yds-hero-summary__group">
+                  <span class="yds-hero-summary__text" id="yds-exam-date-summary"></span>
+                  <button type="button" class="yds-hero-icon-btn yds-hero-icon-btn--date" id="btn-yds-exam-edit" aria-label="Tarihi düzenle" title="Tarihi düzenle">
+                    <svg class="yds-hero-icon-btn__svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                </div>
+                <span class="yds-hero-summary__sep" aria-hidden="true"></span>
+                <div class="yds-hero-summary__group">
+                  <span class="yds-hero-summary__text" id="yds-target-score-summary"></span>
+                  <button type="button" class="yds-hero-icon-btn yds-hero-icon-btn--score" id="btn-yds-score-edit" aria-label="Hedef puanı düzenle" title="Hedef puanı düzenle">
+                    <svg class="yds-hero-icon-btn__svg yds-hero-icon-btn__svg--sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                </div>
+                <span class="yds-hero-summary__sep yds-hero-summary__sep--before-app" aria-hidden="true"></span>
+                <div class="yds-hero-summary__group">
+                  <span class="yds-hero-summary__text" id="yds-application-summary"></span>
+                  <button type="button" class="yds-hero-icon-btn yds-hero-icon-btn--score" id="btn-yds-application-edit" aria-label="Başvuru tarihini düzenle" title="Başvuru tarihini düzenle">
+                    <svg class="yds-hero-icon-btn__svg yds-hero-icon-btn__svg--sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="yds-field yds-field--span">
+              <label for="yds-program-start-date">Çalışma programı başlangıcı</label>
+              <input type="date" id="yds-program-start-date" autocomplete="off" />
+            </div>
+            <div class="yds-field yds-field--span">
+              <p class="yds-countdown" id="yds-days-left" role="status">Sınav tarihi yok.</p>
+            </div>
+            <div class="yds-field yds-field--span yds-basvuru-alert-wrap">
+              <div id="yds-basvuru-alert" class="yds-basvuru-alert" role="status" aria-live="polite" hidden></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="yds-roll-title">
+          <div class="panel__head-row">
+            <h2 id="yds-roll-title" class="panel__h2">Bu hafta soru &amp; süre özeti</h2>
+          </div>
+          <div id="yds-rollup" class="yds-rollup"></div>
+        </section>
+
+        <section class="panel calendar-page panel--yds-cal" aria-labelledby="yds-cal-title">
+          <div class="panel__head-row">
+            <h2 id="yds-cal-title" class="panel__h2">YDS takvimi</h2>
+            <p class="panel__sub">Aylık görünüm · YDS dakikası</p>
+          </div>
+          <div class="calendar-toolbar">
+            <button type="button" class="btn btn--ghost calendar-toolbar__nav" data-yds-cal-prev="1" aria-label="Önceki ay">←</button>
+            <h3 class="calendar-toolbar__title" id="yds-cal-label">—</h3>
+            <button type="button" class="btn btn--ghost calendar-toolbar__nav" data-yds-cal-next="1" aria-label="Sonraki ay">→</button>
+            <button type="button" class="btn btn--small" id="yds-cal-today" data-yds-cal-today="1">Bugün</button>
+          </div>
+          <div class="calendar-legend">
+            <span class="calendar-legend__item"><span class="calendar-legend__sw calendar-legend__sw--en"></span> YDS</span>
+            <span class="calendar-legend__item"><span class="calendar-legend__ring"></span> Seri</span>
+          </div>
+          <div id="yds-cal-root" class="calendar-grid-wrap"></div>
+        </section>
+
+        <section class="panel panel--yds-chart" aria-labelledby="yds-chart-title">
+          <div class="panel__head-row panel__head-row--yds-chart">
+            <div class="panel__head-text--yds-chart">
+              <h2 id="yds-chart-title" class="panel__h2">Son 14 gün</h2>
+            </div>
+            <div class="yds-chart-start-field">
+              <label for="yds-chart-start-date">Başlangıç</label>
+              <input type="date" id="yds-chart-start-date" autocomplete="off" />
+            </div>
+          </div>
+          <p class="chart-empty yds-chart-empty" id="yds-chart-empty" hidden>Kayıt yok.</p>
+          <div class="chart-card__canvas-wrap yds-chart-canvas-wrap" id="yds-chart-canvas-wrap">
+            <canvas id="yds-chart-trend" aria-label="Son on dört gün YDS özeti"></canvas>
+          </div>
+        </section>
+
+        <section class="panel panel--yds-deneme" aria-labelledby="yds-deneme-title">
+          <div class="panel__head-row">
+            <h2 id="yds-deneme-title" class="panel__h2">Deneme sonuçları</h2>
+          </div>
+          <p class="chart-empty yds-deneme-empty" id="yds-deneme-empty" hidden>Kayıt yok.</p>
+          <div class="chart-card__canvas-wrap yds-deneme-canvas-wrap" id="yds-deneme-canvas-wrap">
+            <canvas id="yds-chart-deneme" aria-label="Deneme net grafiği"></canvas>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="js/sync-api.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>

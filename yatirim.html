@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Çalışma Takip — Yatırım</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="yatirim" class="page-yatirim">
+  <div class="shell">
+    <aside class="sidebar" aria-label="Ana menü">
+      <div class="sidebar__top">
+        <a href="index.html" class="sidebar__brand">
+          <span class="sidebar__logo" aria-hidden="true">◆</span>
+          <span class="sidebar__app-name">Çalışma Takip</span>
+        </a>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="index.html" class="sidebar__link">Ana sayfa</a>
+        <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
+        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
+        <a href="yds.html" class="sidebar__link">YDS</a>
+        <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
+        <a href="yatirim.html" class="sidebar__link sidebar__link--active" aria-current="page">Yatırım</a>
+        <a href="calendar.html" class="sidebar__link">Takvim</a>
+        <a href="giris.html" class="sidebar__link">Giriş</a>
+        <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
+      </nav>
+    </aside>
+
+    <div class="shell__main">
+      <header class="header">
+        <div class="header__brand header__brand--compact">
+          <div>
+            <h1 class="header__page-title">Yatırım</h1>
+          </div>
+        </div>
+        <div class="header__actions">
+          <a href="yeni-kayit.html" class="btn btn--primary">İşlem ekle</a>
+          <button type="button" class="btn btn--ghost" id="btn-export">Dışa aktar</button>
+          <label class="btn btn--ghost btn--file">
+            İçe aktar
+            <input type="file" id="import-file" accept="application/json" hidden />
+          </label>
+        </div>
+      </header>
+
+      <div class="shell__content shell__content--yatirim">
+        <section id="yatirim-dashboard" class="panel panel--yatirim-dash yatirim-dash" aria-labelledby="y-dash-title">
+          <div class="panel__head-row">
+            <h2 id="y-dash-title" class="panel__h2">Özet</h2>
+            <p class="panel__sub">Dönem · net · hacim · grafikler</p>
+          </div>
+
+          <div class="yatirim-dash-toolbar">
+            <div class="yatirim-period">
+              <span class="yatirim-period__label">Görünüm</span>
+              <div class="yatirim-segmented" role="tablist" aria-label="Dönem türü">
+                <button type="button" class="btn btn--small yatirim-period-btn" data-yatirim-mode="week">Hafta</button>
+                <button type="button" class="btn btn--small yatirim-period-btn yatirim-period-btn--active" data-yatirim-mode="month">Ay</button>
+                <button type="button" class="btn btn--small yatirim-period-btn" data-yatirim-mode="year">Yıl</button>
+              </div>
+            </div>
+            <div class="yatirim-pickers" id="yatirim-pickers">
+              <div class="yatirim-pickers__block" id="yatirim-pick-week" hidden>
+                <label class="yatirim-pickers__lbl" for="yatirim-week-ref">Hafta</label>
+                <input type="date" id="yatirim-week-ref" class="yatirim-pickers__input" />
+              </div>
+              <div class="yatirim-pickers__block" id="yatirim-pick-my">
+                <label class="yatirim-pickers__lbl" for="yatirim-select-year">Yıl</label>
+                <select id="yatirim-select-year" class="yatirim-pickers__input"></select>
+                <span id="yatirim-month-wrap">
+                  <label class="yatirim-pickers__lbl" for="yatirim-select-month">Ay</label>
+                  <select id="yatirim-select-month" class="yatirim-pickers__input"></select>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p class="yatirim-period-summary" id="yatirim-period-summary"></p>
+
+          <div class="yatirim-kpi-grid">
+            <article class="yatirim-kpi-card yatirim-kpi-card--net">
+              <span class="yatirim-kpi-card__label">Net tutar</span>
+              <strong class="yatirim-kpi-card__val" id="yatirim-net">0 ₺</strong>
+            </article>
+            <article class="yatirim-kpi-card yatirim-kpi-card--vol">
+              <span class="yatirim-kpi-card__label">İşlem hacmi</span>
+              <strong class="yatirim-kpi-card__val" id="yatirim-volume">0 ₺</strong>
+            </article>
+          </div>
+
+          <div class="yatirim-charts">
+            <div class="yatirim-chart-block yatirim-chart-block--card">
+              <h3 class="yatirim-chart-block__title">Kalemlere göre (hacim payı %)</h3>
+              <div class="yatirim-donut-row">
+                <div class="yatirim-donut-stack" aria-hidden="true">
+                  <div id="yatirim-donut-bg" class="yatirim-donut"><span class="yatirim-donut__hole"></span></div>
+                  <svg id="yatirim-donut-labels" class="yatirim-donut-labels" viewBox="0 0 200 200" width="140" height="140"></svg>
+                </div>
+                <ul id="yatirim-legend" class="yatirim-legend"></ul>
+              </div>
+            </div>
+            <div class="yatirim-chart-block yatirim-chart-block--card" id="yatirim-bars-chart-block" hidden>
+              <h3 class="yatirim-chart-block__title" id="yatirim-bars-title">Aylık net tutar (₺)</h3>
+              <div id="yatirim-daily-bars" class="yatirim-daily-bars"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel--yatirim-records" aria-labelledby="y-title">
+          <h2 id="y-title" class="panel__h2">Yatırım kayıtları</h2>
+          <p id="yatirim-empty-all" class="yatirim-empty-msg yatirim-empty-msg--banner table-muted" hidden>Kayıt yok. <a href="yeni-kayit.html">İşlem ekle</a></p>
+          <div id="yatirim-records-wrap" hidden>
+            <div class="yatirim-table-toolbar" id="yatirim-table-toolbar">
+              <div class="yatirim-toolbar__row">
+                <label class="yatirim-toolbar__field yatirim-toolbar__field--grow">
+                  <span class="yatirim-toolbar__lbl">Varlık ara</span>
+                  <input type="search" id="yatirim-filter-q" class="yatirim-toolbar__input" placeholder="Metin…" autocomplete="off" />
+                </label>
+                <label class="yatirim-toolbar__field">
+                  <span class="yatirim-toolbar__lbl">Tür</span>
+                  <select id="yatirim-filter-action" class="yatirim-toolbar__input">
+                    <option value="">Tümü</option>
+                    <option value="arastirma">Araştırma / not</option>
+                    <option value="alis">Alış</option>
+                    <option value="satis">Satış</option>
+                    <option value="gelir">Gelir / temettü</option>
+                    <option value="diger">Diğer</option>
+                  </select>
+                </label>
+                <label class="yatirim-toolbar__field">
+                  <span class="yatirim-toolbar__lbl">İşlem başlangıç</span>
+                  <input type="date" id="yatirim-filter-from" class="yatirim-toolbar__input" />
+                </label>
+                <label class="yatirim-toolbar__field">
+                  <span class="yatirim-toolbar__lbl">İşlem bitiş</span>
+                  <input type="date" id="yatirim-filter-to" class="yatirim-toolbar__input" />
+                </label>
+              </div>
+            </div>
+            <div id="yatirim-list" class="table-scroll yatirim-table-wrap">
+              <table class="data-table data-table--sortable data-table--yatirim">
+                <thead>
+                  <tr>
+                    <th scope="col">
+                      <button type="button" class="yatirim-th-btn" data-yatirim-sort="date">İşlem tarihi<span class="yatirim-th__sort" aria-hidden="true"></span></button>
+                    </th>
+                    <th scope="col">
+                      <button type="button" class="yatirim-th-btn" data-yatirim-sort="asset">Varlık / not<span class="yatirim-th__sort" aria-hidden="true"></span></button>
+                    </th>
+                    <th scope="col">
+                      <button type="button" class="yatirim-th-btn" data-yatirim-sort="action">Tür<span class="yatirim-th__sort" aria-hidden="true"></span></button>
+                    </th>
+                    <th scope="col">
+                      <button type="button" class="yatirim-th-btn" data-yatirim-sort="price">Hisse fiyatı (₺/adet)<span class="yatirim-th__sort" aria-hidden="true"></span></button>
+                    </th>
+                    <th scope="col">
+                      <button type="button" class="yatirim-th-btn" data-yatirim-sort="amount">Tutar<span class="yatirim-th__sort" aria-hidden="true"></span></button>
+                    </th>
+                    <th scope="col">
+                      <button type="button" class="yatirim-th-btn" data-yatirim-sort="note">Not<span class="yatirim-th__sort" aria-hidden="true"></span></button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="yatirim-table-body"></tbody>
+              </table>
+            </div>
+            <p id="yatirim-empty-filter" class="yatirim-empty-msg yatirim-empty-msg--filter table-muted" hidden>Kayıt yok.</p>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+  <script src="js/sync-api.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>

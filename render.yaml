@@ -1,0 +1,15 @@
+# Render.com: GitHub'a push → Render'da "Blueprint" ile bağla → sana özel https://....onrender.com
+# https://dashboard.render.com/select-repo?type=blueprint
+services:
+  - type: web
+    name: calisma-takip
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install --prefix server
+    startCommand: node server/index.js
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Sadece siz erişsin: Dashboard'dan ekleyin (değeri repoya yazmayın):
+      # PRIVATE_ACCESS_PASS, isteğe bağlı PRIVATE_ACCESS_USER

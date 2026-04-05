@@ -1,0 +1,50 @@
+Kalıcı link (tek seferlik kurulum)
+==================================
+
+Ben senin yerine internette hesap açıp link üretemem; link, Render sen oluşturduğunda çıkar.
+
+1) Bu klasörü GitHub'a yükle (yeni repo, push).
+
+2) https://render.com → Sign up → "New" → "Blueprint" → GitHub repo'yu seç →
+   render.yaml otomatik okunur → "Apply" / Deploy.
+
+3) Birkaç dakika sonra sana özel adres hazır olur:
+   https://calisma-takip.onrender.com  (veya seçtiğin isim.onrender.com)
+
+   Bu adresi telefonda da aynen aç — tüm veriler aynı sunucuda.
+
+Not: Ücretsiz planda makine uyku moduna geçebilir; ilk açılış 1–2 dk sürebilir.
+Not: Ücretsiz disk bazen sıfırlanabilir; kritik yedek için ara sıra "Dışa aktar" JSON al.
+
+Evde hızlı test (geçici link, bilgisayarda Node gerekir)
+=======================================================
+  cd server
+  npm install
+  npm run tunnel
+
+Konsoldaki https://....trycloudflare.com adresi her çalıştırmada değişir; kalıcı değildir.
+
+Sadece siz görmek istiyorsanız (şifre ile koruma)
+================================================
+Sunucu, PRIVATE_ACCESS_PASS tanımlıyken tüm siteyi (sayfalar + /api/state) kullanıcı adı ve
+şifre ile korur. Başkası linki bilse bile giriş yapamaz.
+
+Yerel / tünel: server klasöründe .env oluşturun (örnek: server/.env.example).
+  PRIVATE_ACCESS_PASS=güçlü-bir-şifre
+İsteğe bağlı: PRIVATE_ACCESS_USER=ben  (yoksa kullanıcı adı "ben" kabul edilir.)
+
+Render: Dashboard → servis → Environment → Add Environment Variable
+  PRIVATE_ACCESS_PASS = (güçlü şifre, repoya yazmayın)
+Tarayıcı ilk açılışta kullanıcı adı + şifre sorar; telefon ve PC'de aynı şifreyi girin.
+
+Not: Linki paylaşırsanız şifreyi de vermiş olursunuz; linki ve şifreyi kimseyle paylaşmayın.
+
+Uygulama içi hesap (aynı veri telefon + PC)
+==========================================
+Sunucuda bir kez "Kayıt ol" derseniz, o sunucudaki veri artık hesaba bağlanır; aynı kullanıcı adı ve
+şifreyle başka cihazda "Giriş yap" derseniz aynı veri yüklenir. Oturum, tarayıcıda saklanır (giris.html).
+
+Henüz hiç hesap yokken eski tek kullanıcı modu çalışır (API anahtarı vb.). İlk kayıt sırasında sunucuda
+eski tek parça veri varsa o hesaba taşınır.
+
+İki katman birlikte kullanılabilir: PRIVATE_ACCESS (siteye tarayıcı şifresi) + uygulama girişi (hesap).

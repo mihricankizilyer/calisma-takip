@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Çalışma Takip — Ayarlar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="ayarlar" class="page-ayarlar">
+  <div class="shell">
+    <aside class="sidebar" aria-label="Ana menü">
+      <div class="sidebar__top">
+        <a href="index.html" class="sidebar__brand">
+          <span class="sidebar__logo" aria-hidden="true">◆</span>
+          <span class="sidebar__app-name">Çalışma Takip</span>
+        </a>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="index.html" class="sidebar__link">Ana sayfa</a>
+        <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
+        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
+        <a href="yds.html" class="sidebar__link">YDS</a>
+        <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
+        <a href="yatirim.html" class="sidebar__link">Yatırım</a>
+        <a href="calendar.html" class="sidebar__link">Takvim</a>
+        <a href="giris.html" class="sidebar__link">Giriş</a>
+        <a href="ayarlar.html" class="sidebar__link sidebar__link--active" aria-current="page">Ayarlar</a>
+      </nav>
+    </aside>
+
+    <div class="shell__main">
+      <header class="header">
+        <div class="header__brand header__brand--compact">
+          <div>
+            <h1 class="header__page-title">Ayarlar</h1>
+          </div>
+        </div>
+      </header>
+
+      <div class="shell__content shell__content--ayarlar">
+        <section class="panel panel--ayarlar-sync" aria-labelledby="sync-title">
+          <div class="panel__head-row">
+            <h2 id="sync-title" class="panel__h2">İnternetten senkron</h2>
+            <p class="panel__sub">Ev dışı / farklı Wi‑Fi</p>
+          </div>
+          <p class="ayarlar-sync-intro">
+            Bilgisayarda <code>npm run tunnel</code> çalıştırıp açılan <strong>https://…trycloudflare.com</strong> adresini buraya yapıştırın; telefonda da aynı adresi tarayıcıya yazın veya bu sayfada kaydedin.
+          </p>
+          <div class="yds-field yds-field--span ayarlar-sync-field">
+            <label for="sync-api-base">Sunucu kök adresi (boş = sadece bu cihazdaki sayfa)</label>
+            <input type="url" id="sync-api-base" class="ayarlar-sync-input" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" />
+          </div>
+          <div class="yds-field yds-field--span ayarlar-sync-field">
+            <label for="sync-api-key">API anahtarı (sunucuda CALISMA_API_KEY tanımlıysa zorunlu)</label>
+            <input type="password" id="sync-api-key" class="ayarlar-sync-input" placeholder="Kaydetmek için yazın" autocomplete="off" />
+          </div>
+          <div class="ayarlar-sync-actions">
+            <button type="button" class="btn btn--primary" id="btn-sync-save">Kaydet</button>
+            <button type="button" class="btn btn--ghost" id="btn-sync-test">Bağlantıyı dene</button>
+            <button type="button" class="btn btn--ghost" id="btn-sync-remove-key">Anahtarı sil</button>
+            <button type="button" class="btn btn--ghost" id="btn-sync-clear">Uzak ayarı sıfırla</button>
+          </div>
+        </section>
+
+        <section class="panel panel--ayarlar-sync" aria-labelledby="account-title">
+          <div class="panel__head-row">
+            <h2 id="account-title" class="panel__h2">Hesap (internet senkron)</h2>
+            <p class="panel__sub">Sunucuda kayıtlı kullanıcılar için</p>
+          </div>
+          <p class="ayarlar-sync-intro" id="account-status">
+            Sunucuda en az bir hesap varken veri çekmek için giriş gerekir. Kayıt veya giriş: <a href="giris.html">Giriş sayfası</a>.
+          </p>
+          <div class="ayarlar-sync-actions">
+            <a class="btn btn--primary" href="giris.html">Giriş / kayıt</a>
+            <button type="button" class="btn btn--ghost" id="btn-account-logout">Çıkış</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script src="js/sync-api.js" defer></script>
+  <script src="js/ayarlar.js" defer></script>
+</body>
+</html>
