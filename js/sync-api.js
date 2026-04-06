@@ -1,6 +1,8 @@
 /**
- * Uzak sunucu (ör. Cloudflare Tunnel / ev dışı) ile /api/state için kök adres.
- * Boş bırakılırsa mevcut sayfa adresi kullanılır (aynı Wi‑Fi / localhost).
+ * Uzak API kök adresi (ör. Render, Cloudflare Tunnel).
+ * Boşsa istekler bu sayfanın adresine gider — telefon + PC’de aynı veriyi görmek için
+ * her iki cihazda da uygulamayı aynı siteden açın (ör. hep https://…onrender.com)
+ * veya buraya o sitenin kök adresini yazın. Wi‑Fi’nin adı önemli değildir.
  */
 (function () {
   "use strict";
@@ -8,6 +10,7 @@
   var KEY_BASE = "calisma_sync_api_base";
   var KEY_SECRET = "calisma_sync_api_key";
   var KEY_SESSION = "calisma_sync_session";
+  var KEY_USERNAME = "calisma_sync_username";
 
   function trimUrl(u) {
     if (u == null) return "";
@@ -62,8 +65,27 @@
   window.setCalismaSessionToken = function (token) {
     try {
       var t = token != null ? String(token).trim() : "";
-      if (!t) localStorage.removeItem(KEY_SESSION);
-      else localStorage.setItem(KEY_SESSION, t);
+      if (!t) {
+        localStorage.removeItem(KEY_SESSION);
+        localStorage.removeItem(KEY_USERNAME);
+      } else localStorage.setItem(KEY_SESSION, t);
+    } catch (e) {}
+  };
+
+  window.getCalismaUsername = function () {
+    try {
+      var u = localStorage.getItem(KEY_USERNAME);
+      return u != null ? String(u).trim() : "";
+    } catch (e) {
+      return "";
+    }
+  };
+
+  window.setCalismaUsername = function (name) {
+    try {
+      var n = name != null ? String(name).trim() : "";
+      if (!n) localStorage.removeItem(KEY_USERNAME);
+      else localStorage.setItem(KEY_USERNAME, n);
     } catch (e) {}
   };
 

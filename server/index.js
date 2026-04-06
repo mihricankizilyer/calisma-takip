@@ -147,6 +147,7 @@ async function readLegacyState(res) {
   }
 }
 
+/** GET/PUT /api/state — oturumdaki kullanıcının user_state satırı; başka kullanıcıların verisine erişim yok. */
 async function readUserState(userId, res) {
   try {
     var row = await store.getUserStateRow(userId);

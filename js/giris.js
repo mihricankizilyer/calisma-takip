@@ -64,7 +64,8 @@
             "Ücretsiz Render’da sunucu uyku/ yeniden başlatma sonrası veritabanı sıfırlanabilir; o zaman aynı adreste tekrar Kayıt gerekir.";
           bannerEl.style.display = "block";
         } else if (data && data.usersCount > 0) {
-          bannerEl.textContent = "Hesabınız varsa kullanıcı adı ve şifreyle Giriş yapın.";
+          bannerEl.textContent =
+            "Bu sunucuda birden fazla hesap olabilir; herkes kendi kullanıcı adı ve şifresiyle kayıt olur veya giriş yapar.";
           bannerEl.style.display = "block";
         }
       })
@@ -104,6 +105,7 @@
         .then(function (j) {
           if (j && j.token && typeof setCalismaSessionToken === "function") {
             setCalismaSessionToken(j.token);
+            if (typeof setCalismaUsername === "function" && j.username) setCalismaUsername(j.username);
             window.location.href = safeReturnUrl();
           } else throw new Error("Yanıt geçersiz");
         })
@@ -140,6 +142,7 @@
         .then(function (j) {
           if (j && j.token && typeof setCalismaSessionToken === "function") {
             setCalismaSessionToken(j.token);
+            if (typeof setCalismaUsername === "function" && j.username) setCalismaUsername(j.username);
             window.location.href = safeReturnUrl();
           } else throw new Error("Yanıt geçersiz");
         })

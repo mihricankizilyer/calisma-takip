@@ -12,6 +12,18 @@
       baseEl.value = getCalismaApiBase() || "";
     }
 
+    var warnLocal = q("sync-localhost-warning");
+    if (warnLocal && typeof getCalismaApiBase === "function") {
+      var proto = window.location.protocol || "";
+      var host = window.location.hostname || "";
+      var isLocal =
+        proto === "file:" ||
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host === "[::1]";
+      if (isLocal && !getCalismaApiBase()) warnLocal.style.display = "block";
+    }
+
     var autoExportEn = q("auto-export-enabled");
     var autoExportTime = q("auto-export-time");
     if (autoExportEn) {
@@ -76,6 +88,14 @@
         if (keyEl) keyEl.value = "";
         alert("API anahtarı kaldırıldı.");
       });
+    }
+
+    var accStatus = q("account-status");
+    if (accStatus && typeof getCalismaSessionToken === "function" && getCalismaSessionToken()) {
+      var un = typeof getCalismaUsername === "function" ? getCalismaUsername() : "";
+      accStatus.textContent = un
+        ? "Giriş yapıldı: " + un + ". Verileriniz bu hesaba özeldir; başka kullanıcılar kendi hesaplarıyla giriş yapar."
+        : "Oturum açık. Veriler senkron hesabınıza bağlı.";
     }
 
     var btnLogout = q("btn-account-logout");

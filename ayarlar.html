@@ -44,13 +44,22 @@
         <section class="panel panel--ayarlar-sync" aria-labelledby="sync-title">
           <div class="panel__head-row">
             <h2 id="sync-title" class="panel__h2">İnternetten senkron</h2>
-            <p class="panel__sub">Ev dışı / farklı Wi‑Fi</p>
+            <p class="panel__sub">Telefon ve PC, farklı Wi‑Fi’ler — aynı veri</p>
           </div>
           <p class="ayarlar-sync-intro">
-            Bilgisayarda <code>npm run tunnel</code> çalıştırıp açılan <strong>https://…trycloudflare.com</strong> adresini buraya yapıştırın; telefonda da aynı adresi tarayıcıya yazın veya bu sayfada kaydedin.
+            Aynı hesapla giriş yaptığınızda veri sunucuda tutulur; <strong>hangi ağdasınız fark etmez</strong> (ev Wi‑Fi, mobil veri, iş yeri…). Telefon ve bilgisayarda <strong>aynı veriyi</strong> görmek için her iki cihazda da bu uygulamayı <strong>aynı internet adresinden</strong> açın ve aynı kullanıcı adı ile giriş yapın (ör. hep <code>https://…onrender.com</code>).
+          </p>
+          <p class="ayarlar-sync-intro">
+            Uygulamayı hep bu adresten açıyorsanız aşağıdaki alan <strong>boş</strong> kalabilir. Biri <code>localhost</code> / dosya, diğeri internet adresi kullanıyorsa, <strong>her iki cihazda</strong> aşağıya genel sunucu adresini (Render veya tünel) yazıp Kaydet deyin.
+          </p>
+          <p class="ayarlar-sync-intro">
+            Geçici tünel: bilgisayarda <code>npm run tunnel</code> ile çıkan <strong>https://…trycloudflare.com</strong> adresini buraya yapıştırın; telefonda Ayarlar’a aynı adresi kaydedin.
+          </p>
+          <p id="sync-localhost-warning" class="ayarlar-sync-intro" role="status" style="display: none; background: rgba(192, 57, 43, 0.1); border-radius: 8px; padding: 12px 14px;">
+            Bu sayfayı <strong>localhost</strong> veya <strong>dosya</strong> olarak açıyorsunuz ve uzak adres boş. Telefondan veya başka Wi‑Fi’den aynı veriyi görmek için yukarıya herkese açık sunucu adresinizi yazın (ör. Render URL’si) ve Kaydet deyin; telefonda da aynı adresi kullanın.
           </p>
           <div class="yds-field yds-field--span ayarlar-sync-field">
-            <label for="sync-api-base">Sunucu kök adresi (boş = sadece bu cihazdaki sayfa)</label>
+            <label for="sync-api-base">Sunucu kök adresi (boş = bu sayfanın sitesi — her cihazda aynı siteyi açtıysanız yeter)</label>
             <input type="url" id="sync-api-base" class="ayarlar-sync-input" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" />
           </div>
           <div class="yds-field yds-field--span ayarlar-sync-field">
@@ -88,10 +97,10 @@
         <section class="panel panel--ayarlar-sync" aria-labelledby="account-title">
           <div class="panel__head-row">
             <h2 id="account-title" class="panel__h2">Hesap (internet senkron)</h2>
-            <p class="panel__sub">Sunucuda kayıtlı kullanıcılar için</p>
+            <p class="panel__sub">Veriler sunucuda hesaba göre ayrılır</p>
           </div>
           <p class="ayarlar-sync-intro" id="account-status">
-            Sunucuda en az bir hesap varken veri çekmek için giriş gerekir. Kayıt veya giriş: <a href="giris.html">Giriş sayfası</a>.
+            Her kullanıcının verisi yalnızca o hesaba bağlıdır. En az bir hesap varken senkron için giriş gerekir. Kayıt veya giriş: <a href="giris.html">Giriş sayfası</a>.
           </p>
           <div class="ayarlar-sync-actions">
             <a class="btn btn--primary" href="giris.html">Giriş / kayıt</a>

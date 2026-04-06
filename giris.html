@@ -44,15 +44,23 @@
         <section class="panel panel--ayarlar-sync" aria-labelledby="giris-title">
           <div class="panel__head-row">
             <h2 id="giris-title" class="panel__h2">Giriş veya kayıt</h2>
-            <p class="panel__sub">Aynı kullanıcı adı ve şifreyle telefon ve bilgisayarda aynı veriler yüklenir.</p>
+            <p class="panel__sub">Telefon ve PC, farklı Wi‑Fi’ler — aynı hesapla aynı veri.</p>
           </div>
           <p class="ayarlar-sync-intro">
-            Sunucuda <strong>ilk kez</strong> hesap açıyorsanız <strong>Kayıt ol</strong> deyin. Zaten kayıtlıysanız <strong>Giriş yap</strong>.
-            Ayarlar’da uzak adres (tünel / Render) kayıtlı olmalı.
+            Veri sunucuda durur; <strong>hangi Wi‑Fi veya mobil şebekeyi</strong> kullandığınız önemli değil. Aynı kullanıcı adı ve şifreyle her yerden giriş yapın; <strong>aynı sunucu adresine</strong> bağlı olduğunuz sürece liste ve kayıtlar eşleşir.
           </p>
           <p class="ayarlar-sync-intro">
-            <strong>Önemli:</strong> Kayıt <em>hangi adreste</em> yapıldıysa giriş de <em>aynı sunucu adresinde</em> olmalıdır.
-            Bilgisayarda localhost’a kayıt edip telefonda Render adresiyle giriş yapılamaz; her iki cihazda da Ayarlar’a aynı adresi yazın (ör. <code>https://calisma-takip.onrender.com</code>, sonda <code>/</code> olmadan).
+            <strong>Kişi bazlı veri:</strong> Sunucuda her hesabın verisi ayrı saklanır; giriş yaptığınız kullanıcı dışında kimse sizin kayıtlarınızı göremez veya değiştiremez.
+          </p>
+          <p class="ayarlar-sync-intro">
+            Aynı sunucuda <strong>birden fazla kişi</strong> de hesap açabilir; herkes kendi kullanıcı adını seçer, veriler birbirine karışmaz.
+          </p>
+          <p class="ayarlar-sync-intro">
+            Sunucuda <strong>ilk kez</strong> hesap açıyorsanız <strong>Kayıt ol</strong> deyin. Zaten kayıtlıysanız <strong>Giriş yap</strong>.
+          </p>
+          <p class="ayarlar-sync-intro">
+            <strong>Önemli:</strong> Kayıt <em>hangi sunucu adresinde</em> yapıldıysa giriş de <em>aynı adreste</em> olmalıdır.
+            PC’de <code>localhost</code> veya dosyadan açıp telefonda internet adresiyle giriş yapılamaz; her iki cihazda Ayarlar’a <strong>aynı genel adresi</strong> yazın (ör. <code>https://calisma-takip.onrender.com</code>, sonda <code>/</code> yok) veya her yerde uygulamayı doğrudan o adresten açın.
           </p>
           <p id="giris-banner" class="ayarlar-sync-intro" role="status" style="display: none; background: rgba(46, 125, 50, 0.08); border-radius: 8px; padding: 12px 14px;"></p>
           <div class="yds-field yds-field--span ayarlar-sync-field">
