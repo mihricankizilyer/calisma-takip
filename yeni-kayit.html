@@ -78,6 +78,7 @@
                 <label for="en-subtype">YDS çalışma türü</label>
                 <select id="en-subtype" autocomplete="off">
                   <option value="">— Tür seçin —</option>
+                  <option value="calisma">Çalışma</option>
                   <option value="grammar">Grammar</option>
                   <option value="cloze">Cloze</option>
                   <option value="tr_eng">TR → ENG</option>
@@ -87,6 +88,14 @@
                   <option value="deneme">Deneme</option>
                   <option value="kelime">Kelime ezber</option>
                 </select>
+              </div>
+
+              <div class="form-en-panel form-en-panel--hidden" data-en-panel="calisma">
+                <p class="form-block__lead">Genel YDS çalışması (soru sayısı gerekmez).</p>
+                <div class="form__row">
+                  <label for="en-calisma-min">Çalışma süresi (dakika)</label>
+                  <input type="number" id="en-calisma-min" min="1" max="1440" step="1" placeholder="0" inputmode="numeric" />
+                </div>
               </div>
 
               <div class="form-en-panel form-en-panel--hidden" data-en-panel="grammar">

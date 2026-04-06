@@ -834,6 +834,7 @@
   }
 
   var enSubtypeLabels = {
+    calisma: "Çalışma",
     grammar: "Grammar",
     cloze: "Cloze",
     tr_eng: "TR→EN",
@@ -1058,6 +1059,7 @@
       enGrammarMin: q("en-grammar-min"),
       enKelimeEzberMin: q("en-kelime-ezber-min"),
       enKelimeSayisi: q("en-kelime-sayisi"),
+      enCalismaMin: q("en-calisma-min"),
       enQGrammar: q("en-q-grammar"),
       enQCloze: q("en-q-cloze"),
       enQTrEng: q("en-q-tr-eng"),
@@ -2239,6 +2241,7 @@
     if (!s || s.category !== "english") return 0;
     var c = s.enCounts || {};
     var st = s.enSubtype;
+    if (st === "calisma") return 0;
     if (st === "grammar") return parseNonNegInt(c.grammar);
     if (st === "cloze") return parseNonNegInt(c.cloze);
     if (st === "tr_eng") return parseNonNegInt(c.trEng);
@@ -2776,6 +2779,7 @@
     }
     var agg = {
       grammar: emptyRow(),
+      calisma: emptyRow(),
       cloze: emptyRow(),
       tr_eng: emptyRow(),
       eng_tr: emptyRow(),
@@ -2821,6 +2825,8 @@
       } else if (st === "kelime") {
         agg.kelime.min += s.enKelimeEzberMinutes || 0;
         agg.kelime.kelimeSay += parseNonNegInt(s.enKelimeSayisi);
+      } else if (st === "calisma") {
+        agg.calisma.min += dm;
       } else {
         agg.grammar.q += parseNonNegInt(c.grammar);
         agg.cloze.q += parseNonNegInt(c.cloze);
@@ -2864,6 +2870,7 @@
       }
     }
     row("Grammar", agg.grammar, null);
+    row("Çalışma", agg.calisma, null);
     row("Cloze", agg.cloze, null);
     row("TR → ENG", agg.tr_eng, null);
     row("ENG → TR", agg.eng_tr, null);
@@ -3412,6 +3419,9 @@
         } else if (stT === "kelime" && el.enKelimeEzberMin) {
           el.enKelimeEzberMin.value = mins > 0 ? String(mins) : "";
           el.enKelimeEzberMin.focus();
+        } else if (stT === "calisma" && el.enCalismaMin) {
+          el.enCalismaMin.value = mins > 0 ? String(mins) : "";
+          el.enCalismaMin.focus();
         } else if (["cloze", "tr_eng", "eng_tr", "passage", "paragraf", "deneme"].indexOf(stT) >= 0 && el.enOtherMin) {
           el.enOtherMin.value = mins > 0 ? String(mins) : "";
           el.enOtherMin.focus();
@@ -3462,6 +3472,7 @@
       if (el.enBos) el.enBos.value = "";
       if (el.enKelimeEzberMin) el.enKelimeEzberMin.value = "";
       if (el.enKelimeSayisi) el.enKelimeSayisi.value = "";
+      if (el.enCalismaMin) el.enCalismaMin.value = "";
       syncEnglishSubtypeUI();
     }
 
@@ -3530,6 +3541,10 @@
         } else if (st === "kelime") {
           if (kEz > 0 || kSay > 0) ok = true;
           duration = kEz > 0 ? kEz : 1;
+        } else if (st === "calisma") {
+          var calM = el.enCalismaMin ? parseNonNegInt(el.enCalismaMin.value) : 0;
+          if (calM > 0) ok = true;
+          duration = calM > 0 ? calM : 1;
         }
         if (!ok) {
           alert("Seçtiğin türe uygun soru sayısı veya süre gir.");
@@ -3579,7 +3594,7 @@
         session.enKelimeEzberMinutes = st2 === "kelime" ? kE : 0;
         session.enKelimeSayisi = st2 === "kelime" && kS > 0 ? kS : null;
         var scSave = readEnScoreFromForm(el);
-        if (st2 !== "kelime") {
+        if (st2 !== "kelime" && st2 !== "calisma") {
           session.enScore = { dogru: scSave.dogru, yanlis: scSave.yanlis, bos: scSave.bos };
         }
       } else if (cat === "technical") {
