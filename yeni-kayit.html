@@ -94,7 +94,7 @@
                 <p class="form-block__lead">Genel YDS çalışması (soru sayısı gerekmez).</p>
                 <div class="form__row">
                   <label for="en-calisma-min">Çalışma süresi (dakika)</label>
-                  <input type="number" id="en-calisma-min" min="1" max="1440" step="1" placeholder="0" inputmode="numeric" />
+                  <input type="text" id="en-calisma-min" inputmode="decimal" placeholder="örn. 25 veya 12,5" autocomplete="off" />
                 </div>
               </div>
 
@@ -105,7 +105,7 @@
                 </div>
                 <div class="form__row">
                   <label for="en-grammar-min">Grammar çalışma süresi (dakika)</label>
-                  <input type="number" id="en-grammar-min" min="0" max="1440" step="1" placeholder="0" inputmode="numeric" />
+                  <input type="text" id="en-grammar-min" inputmode="decimal" placeholder="örn. 30 veya 12,5" autocomplete="off" />
                 </div>
               </div>
 
@@ -172,13 +172,13 @@
 
               <div class="form__row form-en-panel form-en-panel--hidden" id="wrap-en-other-min">
                 <label for="en-other-min">Bu oturum süresi (dakika)</label>
-                <input type="number" id="en-other-min" min="0" max="1440" step="1" placeholder="0" inputmode="numeric" />
+                <input type="text" id="en-other-min" inputmode="decimal" placeholder="örn. 45 veya 12,5" autocomplete="off" />
               </div>
 
               <div class="form-en-panel form-en-panel--hidden" data-en-panel="kelime">
                 <div class="form__row">
                   <label for="en-kelime-ezber-min">Kelime ezberleme süresi (dakika)</label>
-                  <input type="number" id="en-kelime-ezber-min" min="0" max="1440" step="1" placeholder="0" inputmode="numeric" />
+                  <input type="text" id="en-kelime-ezber-min" inputmode="decimal" placeholder="örn. 20 veya 12,5" autocomplete="off" />
                 </div>
                 <div class="form__row">
                   <label for="en-kelime-sayisi">Kelime sayısı (ezberlenen)</label>
@@ -268,7 +268,7 @@
             <div class="form__row" id="wrap-duration">
               <label for="duration">Süre (dakika)</label>
               <div class="duration-row">
-                <input type="number" id="duration" name="duration" min="1" max="1440" step="1" placeholder="Zamanlayıcı veya elle" />
+                <input type="text" id="duration" name="duration" inputmode="decimal" placeholder="Zamanlayıcı veya elle (12,5 veya 12.5)" autocomplete="off" />
                 <button type="button" class="btn btn--small" id="btn-use-timer">Zamanlayıcıyı kullan</button>
               </div>
             </div>

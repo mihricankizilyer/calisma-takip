@@ -833,6 +833,26 @@
     return isNaN(n) || n < 0 ? 0 : n;
   }
 
+  /** Dakika: hem 12,5 hem 12.5 kabul eder; en fazla 1440, iki ondalık. */
+  function parseNonNegMinutes(val) {
+    if (val == null) return 0;
+    var s = String(val).trim();
+    if (s === "") return 0;
+    s = s.replace(",", ".");
+    var n = parseFloat(s);
+    if (isNaN(n) || n < 0) return 0;
+    if (n > 1440) n = 1440;
+    return Math.round(n * 100) / 100;
+  }
+
+  function formatMinutesForDisplay(m) {
+    var n = Number(m);
+    if (isNaN(n)) return "0";
+    var r = Math.round(n * 100) / 100;
+    if (Math.abs(r - Math.round(r)) < 1e-6) return String(Math.round(r));
+    return String(r).replace(".", ",");
+  }
+
   var enSubtypeLabels = {
     calisma: "Çalışma",
     grammar: "Grammar",
@@ -883,8 +903,8 @@
       if (par) parts.push("Par.:" + par);
       if (dn) parts.push("Deneme:" + dn);
     }
-    if (s.enGrammarMinutes != null && s.enGrammarMinutes > 0) parts.push("Gr " + s.enGrammarMinutes + " dk");
-    if (s.enKelimeEzberMinutes != null && s.enKelimeEzberMinutes > 0) parts.push("Ezber " + s.enKelimeEzberMinutes + " dk");
+    if (s.enGrammarMinutes != null && s.enGrammarMinutes > 0) parts.push("Gr " + formatMinutesForDisplay(s.enGrammarMinutes) + " dk");
+    if (s.enKelimeEzberMinutes != null && s.enKelimeEzberMinutes > 0) parts.push("Ezber " + formatMinutesForDisplay(s.enKelimeEzberMinutes) + " dk");
     if (s.enKelimeSayisi != null && s.enKelimeSayisi > 0) parts.push(s.enKelimeSayisi + " kelime");
     var sc = s.enScore;
     if (sc && typeof sc === "object") {
@@ -1269,11 +1289,11 @@
     if (el.statWeekTotal) {
       var w = weeklyMinutes();
       var su = page === "dashboard" ? "" : " dk";
-      el.statWeekTotal.textContent = w.total + su;
-      el.statWeekEn.textContent = w.en + su;
-      el.statWeekTech.textContent = w.tech + su;
-      if (el.statWeekBook) el.statWeekBook.textContent = w.book + su;
-      if (el.statWeekInv) el.statWeekInv.textContent = w.inv + su;
+      el.statWeekTotal.textContent = formatMinutesForDisplay(w.total) + su;
+      el.statWeekEn.textContent = formatMinutesForDisplay(w.en) + su;
+      el.statWeekTech.textContent = formatMinutesForDisplay(w.tech) + su;
+      if (el.statWeekBook) el.statWeekBook.textContent = formatMinutesForDisplay(w.book) + su;
+      if (el.statWeekInv) el.statWeekInv.textContent = formatMinutesForDisplay(w.inv) + su;
 
       var maxBar = Math.max(w.en, w.tech, w.book, w.inv, 1);
       el.barEn.style.width = Math.round((w.en / maxBar) * 100) + "%";
@@ -1499,7 +1519,7 @@
         escapeHtml(badgeText) +
         "</span>" +
         '<span class="session-item__time">' +
-        (s.category === "investment" ? "—" : String(s.durationMinutes || 0) + " dk") +
+        (s.category === "investment" ? "—" : formatMinutesForDisplay(s.durationMinutes || 0) + " dk") +
         "</span>" +
         '<span class="session-item__date">' +
         escapeHtml(formatSessionDate(sessionEffectiveTime(s))) +
@@ -1976,7 +1996,7 @@
               "</span><span class=\"book-timeline__meta\">" +
               (s.pagesRead || 0) +
               " syf · " +
-              (s.durationMinutes || 0) +
+              formatMinutesForDisplay(s.durationMinutes || 0) +
               " dk" +
               (s.finishedBook ? " · <em>bitirdi</em>" : "") +
               "</span>" +
@@ -3405,8 +3425,7 @@
     el.btnReset.addEventListener("click", resetTimer);
 
     el.btnUseTimer.addEventListener("click", function () {
-      var mins = Math.ceil(timerElapsedSec / 60);
-      if (mins < 1 && timerElapsedSec > 0) mins = 1;
+      var mins = Math.round((timerElapsedSec / 60) * 100) / 100;
       if (el.category.value === "english") {
         var stT = el.enSubtype && el.enSubtype.value;
         if (!stT) {
@@ -3479,7 +3498,7 @@
     el.form.addEventListener("submit", function (e) {
       e.preventDefault();
       var cat = el.category.value;
-      var duration = parseInt(el.duration.value, 10);
+      var duration = parseNonNegMinutes(el.duration && el.duration.value);
 
       if (cat === "english") {
         var st = el.enSubtype && el.enSubtype.value;
@@ -3487,10 +3506,10 @@
           alert("YDS çalışma türü seç.");
           return;
         }
-        var gMin = el.enGrammarMin ? parseNonNegInt(el.enGrammarMin.value) : 0;
-        var kEz = el.enKelimeEzberMin ? parseNonNegInt(el.enKelimeEzberMin.value) : 0;
+        var gMin = el.enGrammarMin ? parseNonNegMinutes(el.enGrammarMin.value) : 0;
+        var kEz = el.enKelimeEzberMin ? parseNonNegMinutes(el.enKelimeEzberMin.value) : 0;
         var kSay = el.enKelimeSayisi ? parseNonNegInt(el.enKelimeSayisi.value) : 0;
-        var oMin = el.enOtherMin ? parseNonNegInt(el.enOtherMin.value) : 0;
+        var oMin = el.enOtherMin ? parseNonNegMinutes(el.enOtherMin.value) : 0;
         var qG = el.enQGrammar ? parseNonNegInt(el.enQGrammar.value) : 0;
         var qC = el.enQCloze ? parseNonNegInt(el.enQCloze.value) : 0;
         var qTe = el.enQTrEng ? parseNonNegInt(el.enQTrEng.value) : 0;
@@ -3542,7 +3561,7 @@
           if (kEz > 0 || kSay > 0) ok = true;
           duration = kEz > 0 ? kEz : 1;
         } else if (st === "calisma") {
-          var calM = el.enCalismaMin ? parseNonNegInt(el.enCalismaMin.value) : 0;
+          var calM = el.enCalismaMin ? parseNonNegMinutes(el.enCalismaMin.value) : 0;
           if (calM > 0) ok = true;
           duration = calM > 0 ? calM : 1;
         }
@@ -3551,8 +3570,8 @@
           return;
         }
       } else if (cat !== "investment") {
-        if (!duration || duration < 1) {
-          alert("Lütfen geçerli bir süre (dakika) gir.");
+        if (duration <= 0 || duration > 1440) {
+          alert("Lütfen geçerli bir süre (dakika) gir. 0'dan büyük, en fazla 1440; ondalık için virgül veya nokta kullanın.");
           return;
         }
       }
@@ -3569,8 +3588,8 @@
       if (cat === "english") {
         var st2 = el.enSubtype && el.enSubtype.value;
         var c2 = { grammar: 0, cloze: 0, trEng: 0, engTr: 0, passage: 0, paragrafAtama: 0, deneme: 0 };
-        var gM = el.enGrammarMin ? parseNonNegInt(el.enGrammarMin.value) : 0;
-        var kE = el.enKelimeEzberMin ? parseNonNegInt(el.enKelimeEzberMin.value) : 0;
+        var gM = el.enGrammarMin ? parseNonNegMinutes(el.enGrammarMin.value) : 0;
+        var kE = el.enKelimeEzberMin ? parseNonNegMinutes(el.enKelimeEzberMin.value) : 0;
         var kS = el.enKelimeSayisi ? parseNonNegInt(el.enKelimeSayisi.value) : 0;
         if (st2 === "grammar") {
           c2.grammar = el.enQGrammar ? parseNonNegInt(el.enQGrammar.value) : 0;
