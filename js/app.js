@@ -210,12 +210,12 @@
     if (!sessionStorage.getItem("yatirimYear")) sessionStorage.setItem("yatirimYear", String(cy));
     if (!sessionStorage.getItem("yatirimMonth")) sessionStorage.setItem("yatirimMonth", String(n.getMonth() + 1));
     if (!sessionStorage.getItem("yatirimWeekRef")) {
-      var m = String(n.getMonth() + 1);
-      if (m.length < 2) m = "0" + m;
-      var d = String(n.getDate());
-      if (d.length < 2) d = "0" + d;
-      sessionStorage.setItem("yatirimWeekRef", cy + "-" + m + "-" + d);
+      sessionStorage.setItem("yatirimWeekRef", dateKeyLocal(n));
     }
+  }
+
+  function setYatirimWeekRefToLocalToday() {
+    sessionStorage.setItem("yatirimWeekRef", dateKeyLocal(new Date()));
   }
 
   function fillYatirimYearSelect(sel) {
@@ -2021,6 +2021,27 @@
     if (!netEl || !volEl || !legendEl || !barsEl) return;
 
     var pr = getYatirimPeriodRange();
+    var inv = state.sessions.filter(function (s) {
+      return s.category === "investment";
+    });
+    if (pr.mode === "week") {
+      var probeWeek = inv.filter(function (s) {
+        return sessionInRange(sessionEffectiveTime(s), pr.start, pr.end);
+      });
+      if (probeWeek.length === 0) {
+        var nowW = new Date();
+        var wsNow = startOfWeekMonday(nowW);
+        var weNow = new Date(wsNow);
+        weNow.setDate(weNow.getDate() + 7);
+        var hasInvestmentThisCalendarWeek = inv.some(function (s) {
+          return sessionInRange(sessionEffectiveTime(s), wsNow, weNow);
+        });
+        if (hasInvestmentThisCalendarWeek) {
+          setYatirimWeekRefToLocalToday();
+          pr = getYatirimPeriodRange();
+        }
+      }
+    }
     if (dash) {
       var pm = pr.mode;
       dash.querySelectorAll("[data-yatirim-mode]").forEach(function (b) {
@@ -2053,9 +2074,6 @@
     }
     if (mw) mw.style.display = pr.mode === "month" ? "" : "none";
 
-    var inv = state.sessions.filter(function (s) {
-      return s.category === "investment";
-    });
     var periodSessions = inv.filter(function (s) {
       return sessionInRange(sessionEffectiveTime(s), pr.start, pr.end);
     });
@@ -3779,7 +3797,12 @@
       ydash.addEventListener("click", function (e) {
         var btn = e.target.closest("[data-yatirim-mode]");
         if (!btn) return;
-        sessionStorage.setItem("yatirimMode", btn.getAttribute("data-yatirim-mode"));
+        var prevMode = sessionStorage.getItem("yatirimMode") || "month";
+        var newMode = btn.getAttribute("data-yatirim-mode");
+        if (newMode === "week" && prevMode !== "week") {
+          setYatirimWeekRefToLocalToday();
+        }
+        sessionStorage.setItem("yatirimMode", newMode);
         renderYatirimPage();
       });
       ydash.addEventListener("change", function (e) {
