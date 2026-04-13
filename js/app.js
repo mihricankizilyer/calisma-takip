@@ -65,6 +65,10 @@
     if (data.goals.streakMinMinutesPerDay == null) data.goals.streakMinMinutesPerDay = 15;
     if (!data.books || !Array.isArray(data.books)) data.books = [];
     data.yds = mergeYds(data.yds);
+    data.sessions.forEach(function (s) {
+      if (s.category != null) s.category = String(s.category).trim();
+      if (!s.category && (s.cat === "investment" || s.type === "investment")) s.category = "investment";
+    });
     return data;
   }
 
@@ -270,10 +274,14 @@
     we.setDate(we.getDate() + 7);
     var sunday = new Date(we);
     sunday.setDate(sunday.getDate() - 1);
+    var refDayKey = dateKeyLocal(ref);
+    var todayKey = dateKeyLocal(new Date());
     var label =
-      ws.toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" }) +
-      " – " +
-      sunday.toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" });
+      refDayKey === todayKey
+        ? "Bugün"
+        : ws.toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" }) +
+            " – " +
+            sunday.toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" });
     return { mode: "week", start: ws, end: we, label: label };
   }
 
@@ -559,11 +567,12 @@
     var canvasWeek = document.getElementById("chart-week-categories");
     var canvasDaily = document.getElementById("chart-daily-7");
     if (!canvasWeek && !canvasDaily) return;
+    state = loadState();
 
     destroyDashboardCharts();
     if (typeof Chart === "undefined") return;
 
-    var w = weeklyMinutes();
+    var w = weeklyChartWeights();
     if (canvasWeek) {
       var cardW = canvasWeek.closest(".chart-card");
       if (w.total <= 0) {
@@ -618,7 +627,9 @@
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.raw != null ? ctx.raw : 0;
-                    return (ctx.label || "") + ": " + v + " dk";
+                    var lb = ctx.label || "";
+                    if (lb === "Yatırım") return "Yatırım: " + v + " işlem";
+                    return lb + ": " + v + " dk";
                   },
                 },
               },
@@ -629,7 +640,7 @@
     }
 
     if (canvasDaily) {
-      var maps = dayCategoryMapsByEffectiveDate();
+      var maps = dayCategoryMapsForCharts();
       var labels7 = [];
       var dEn = [];
       var dTech = [];
@@ -679,14 +690,25 @@
                 beginAtZero: true,
                 ticks: {
                   callback: function (val) {
-                    return val + " dk";
+                    return String(val);
                   },
                 },
               },
             },
             plugins: {
               legend: { position: "bottom", labels: { boxWidth: 12, padding: 8, font: { size: 11 } } },
-              tooltip: { mode: "index", intersect: false },
+              tooltip: {
+                mode: "index",
+                intersect: false,
+                callbacks: {
+                  label: function (context) {
+                    var label = context.dataset.label || "";
+                    var v = context.parsed.y != null ? context.parsed.y : 0;
+                    if (label === "Yatırım") return label + ": " + v + " işlem";
+                    return label + ": " + v + " dk";
+                  },
+                },
+              },
             },
           },
         });
@@ -1225,6 +1247,47 @@
     return { en: en, tech: tech, book: book, inv: inv, total: en + tech + book + inv };
   }
 
+  /** Geçmiş grafikleri: yatırımın süresi yok; işlem başına 1 birim (görünürlük için). */
+  function sessionChartWeight(s) {
+    if (!s) return 0;
+    if (s.category === "investment") return 1;
+    return s.durationMinutes || 0;
+  }
+
+  function weeklyChartWeights() {
+    var en = 0;
+    var tech = 0;
+    var book = 0;
+    var inv = 0;
+    state.sessions.forEach(function (s) {
+      if (!isInCurrentWeek(sessionEffectiveTime(s))) return;
+      var w = sessionChartWeight(s);
+      if (s.category === "english") en += w;
+      else if (s.category === "technical") tech += w;
+      else if (s.category === "book") book += w;
+      else if (s.category === "investment") inv += w;
+    });
+    return { en: en, tech: tech, book: book, inv: inv, total: en + tech + book + inv };
+  }
+
+  function dayCategoryMapsForCharts() {
+    var en = {};
+    var tech = {};
+    var book = {};
+    var inv = {};
+    state.sessions.forEach(function (s) {
+      var iso = sessionEffectiveTime(s);
+      if (!iso) return;
+      var k = dateKeyLocal(new Date(iso));
+      var w = sessionChartWeight(s);
+      if (s.category === "english") en[k] = (en[k] || 0) + w;
+      else if (s.category === "technical") tech[k] = (tech[k] || 0) + w;
+      else if (s.category === "book") book[k] = (book[k] || 0) + w;
+      else if (s.category === "investment") inv[k] = (inv[k] || 0) + w;
+    });
+    return { en: en, tech: tech, book: book, inv: inv };
+  }
+
   function ensureBook(title, author, totalPages) {
     var t = (title || "").trim();
     if (!t) return null;
@@ -1328,7 +1391,9 @@
   }
 
   function formatSessionDate(iso) {
+    if (!iso) return "—";
     var d = new Date(iso);
+    if (isNaN(d.getTime())) return "—";
     return d.toLocaleString("tr-TR", {
       day: "numeric",
       month: "short",
@@ -1391,7 +1456,11 @@
 
   function sessionEffectiveTime(s) {
     if (!s) return "";
-    if (s.category === "investment" && s.transactionAt) return s.transactionAt;
+    var cat = String(s.category || "").trim();
+    if (cat === "investment" && s.transactionAt) {
+      var d = new Date(s.transactionAt);
+      if (!isNaN(d.getTime())) return s.transactionAt;
+    }
     return s.createdAt;
   }
 
@@ -1458,13 +1527,19 @@
 
   function renderList() {
     if (!el.sessionList) return;
-    var filter = el.filterCategory.value;
+    state = loadState();
+    var filter = String(el.filterCategory.value || "").trim();
     var list = state.sessions.slice().sort(function (a, b) {
-      return new Date(sessionEffectiveTime(b)) - new Date(sessionEffectiveTime(a));
+      var ta = new Date(sessionEffectiveTime(a)).getTime();
+      var tb = new Date(sessionEffectiveTime(b)).getTime();
+      if (isNaN(tb) && isNaN(ta)) return 0;
+      if (isNaN(tb)) return -1;
+      if (isNaN(ta)) return 1;
+      return tb - ta;
     });
     if (filter) {
       list = list.filter(function (s) {
-        return s.category === filter;
+        return String(s.category || "").trim() === filter;
       });
     }
 
@@ -1476,29 +1551,30 @@
     el.emptyMsg.classList.remove("is-visible");
 
     list.forEach(function (s) {
+      var cat = String(s.category || "").trim();
       var li = document.createElement("li");
       li.className = "session-item";
       li.dataset.id = s.id;
 
       var badgeClass = "session-item__badge--tech";
-      if (s.category === "english") badgeClass = "session-item__badge--en";
-      else if (s.category === "book") badgeClass = "session-item__badge--book";
-      else if (s.category === "investment") badgeClass = "session-item__badge--inv";
-      var badgeText = categoryLabels[s.category] || s.category;
+      if (cat === "english") badgeClass = "session-item__badge--en";
+      else if (cat === "book") badgeClass = "session-item__badge--book";
+      else if (cat === "investment") badgeClass = "session-item__badge--inv";
+      var badgeText = categoryLabels[cat] || cat;
 
       var metaParts = [];
-      if (s.category === "english") {
+      if (cat === "english") {
         var enMeta = formatEnglishSessionMeta(s);
         if (enMeta) metaParts.push(enMeta);
       }
-      if (s.category === "technical" && s.techTopic) {
+      if (cat === "technical" && s.techTopic) {
         metaParts.push(s.techTopic);
       }
-      if (s.category === "book") {
+      if (cat === "book") {
         if (s.bookTitle) metaParts.push(s.bookTitle);
         if (s.pagesRead != null) metaParts.push(s.pagesRead + " syf");
       }
-      if (s.category === "investment") {
+      if (cat === "investment") {
         if (s.assetName) metaParts.push(s.assetName);
         if (s.sharePrice != null && !isNaN(s.sharePrice)) metaParts.push(String(s.sharePrice) + " ₺/adet");
         else if (s.shareQuantity != null && !isNaN(s.shareQuantity))
@@ -1509,6 +1585,7 @@
       if (s.tags && s.tags.length) {
         metaParts.push(s.tags.join(", "));
       }
+      if (cat === "investment" && !metaParts.length) metaParts.push("Yatırım kaydı");
 
       var top = document.createElement("div");
       top.className = "session-item__top";
@@ -1519,7 +1596,7 @@
         escapeHtml(badgeText) +
         "</span>" +
         '<span class="session-item__time">' +
-        (s.category === "investment" ? "—" : formatMinutesForDisplay(s.durationMinutes || 0) + " dk") +
+        (cat === "investment" ? "—" : formatMinutesForDisplay(s.durationMinutes || 0) + " dk") +
         "</span>" +
         '<span class="session-item__date">' +
         escapeHtml(formatSessionDate(sessionEffectiveTime(s))) +
@@ -2700,8 +2777,6 @@
     var useMonthly = chartStartOk && ydsChartShouldUseMonthly(chartStartRaw);
     var labels = [];
     var dataMin = [];
-    var dataQ = [];
-    var dataD = [];
     var sumTotal = 0;
     var t;
     var ii;
@@ -2711,10 +2786,8 @@
       var ms = ydsChartMonthlySeries(agg, chartStartRaw, todayKey);
       labels = ms.labels;
       dataMin = ms.dataMin;
-      dataQ = ms.dataQ;
-      dataD = ms.dataD;
       for (ii = 0; ii < labels.length; ii++) {
-        sumTotal += dataMin[ii] + dataQ[ii] + dataD[ii];
+        sumTotal += dataMin[ii];
       }
     } else {
       for (t = 13; t >= 0; t--) {
@@ -2725,12 +2798,8 @@
         if (chartStartOk && dk < chartStartRaw) continue;
         labels.push(dt.getDate() + " " + MONTH_SHORT_TR[dt.getMonth()]);
         var m0 = agg.min[dk] || 0;
-        var q0 = agg.q[dk] || 0;
-        var d0 = agg.dogru[dk] || 0;
         dataMin.push(m0);
-        dataQ.push(q0);
-        dataD.push(d0);
-        sumTotal += m0 + q0 + d0;
+        sumTotal += m0;
       }
     }
 
@@ -2745,7 +2814,7 @@
     if (canvas) {
       canvas.setAttribute(
         "aria-label",
-        useMonthly ? "Aylık YDS özeti (dakika, soru, doğru)" : "Son on dört gün YDS özeti"
+        useMonthly ? "Aylık YDS çalışma süresi (dakika)" : "Son on dört gün YDS çalışma süresi (dakika)"
       );
     }
 
@@ -2755,33 +2824,20 @@
     }
 
     ydsTrendChart = new Chart(canvas, {
-      type: "bar",
+      type: "line",
       data: {
         labels: labels,
         datasets: [
           {
-            label: "Dakika",
+            label: "Çalışma süresi",
             data: dataMin,
-            backgroundColor: "rgba(13, 148, 136, 0.55)",
             borderColor: "#0d9488",
-            borderWidth: 1,
-            yAxisID: "y",
-          },
-          {
-            label: "Soru",
-            data: dataQ,
-            backgroundColor: "rgba(30, 58, 95, 0.45)",
-            borderColor: "#1e3a5f",
-            borderWidth: 1,
-            yAxisID: "y1",
-          },
-          {
-            label: "Doğru",
-            data: dataD,
-            backgroundColor: "rgba(34, 197, 94, 0.5)",
-            borderColor: "#16a34a",
-            borderWidth: 1,
-            yAxisID: "y1",
+            backgroundColor: "rgba(13, 148, 136, 0.12)",
+            borderWidth: 2,
+            fill: true,
+            tension: 0.25,
+            pointRadius: 3,
+            pointHoverRadius: 5,
           },
         ],
       },
@@ -2792,20 +2848,21 @@
         scales: {
           x: xScaleOpts,
           y: {
-            position: "left",
             beginAtZero: true,
-            title: { display: true, text: "Dakika" },
+            title: { display: true, text: "Süre (dakika)" },
             ticks: { callback: function (v) { return v + " dk"; } },
-          },
-          y1: {
-            position: "right",
-            beginAtZero: true,
-            grid: { drawOnChartArea: false },
-            title: { display: true, text: "Soru / doğru" },
           },
         },
         plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
+                return "Çalışma: " + v + " dk";
+              },
+            },
+          },
         },
       },
     });
@@ -3036,7 +3093,7 @@
 
     var chartTitleEl = document.getElementById("yds-chart-title");
     if (chartTitleEl) {
-      chartTitleEl.textContent = chartMonthly ? "Aylık özet" : "Son 14 gün";
+      chartTitleEl.textContent = chartMonthly ? "Çalışma süresi (aylık)" : "Çalışma süresi (son 14 gün)";
     }
 
     var basvuruBanner = document.getElementById("yds-basvuru-alert");
@@ -3864,7 +3921,10 @@
 
   function refreshAfterServerSync() {
     if (page === "dashboard") renderStats();
-    else if (page === "gecmis") renderList();
+    else if (page === "gecmis") {
+      renderList();
+      renderDashboardCharts();
+    }
     else if (page === "kitaplar") renderKitaplarPage();
     else if (page === "yatirim") renderYatirimPage();
     else if (page === "yds") renderYdsPage();
@@ -3904,8 +3964,27 @@
           return;
         }
         if (!serverEmpty) {
-          state = normalizeStateObject(data);
+          var incoming = normalizeStateObject(data);
+          var serverIds = Object.create(null);
+          var si;
+          for (si = 0; si < incoming.sessions.length; si++) {
+            var sid = incoming.sessions[si] && incoming.sessions[si].id;
+            if (sid) serverIds[sid] = true;
+          }
+          var mergedSessions = incoming.sessions.slice();
+          var addedLocal = 0;
+          for (si = 0; si < state.sessions.length; si++) {
+            var loc = state.sessions[si];
+            if (!loc || !loc.id) continue;
+            if (!serverIds[loc.id]) {
+              mergedSessions.push(loc);
+              addedLocal++;
+            }
+          }
+          incoming.sessions = mergedSessions;
+          state = incoming;
           persistStateLocal(state);
+          if (addedLocal > 0) pushStateToServerImmediate(state);
           refreshAfterServerSync();
         }
       })
