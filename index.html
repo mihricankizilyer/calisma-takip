@@ -103,9 +103,41 @@
           </div>
         </section>
 
+        <section class="panel panel--dashboard-charts" aria-labelledby="dash-charts-title">
+          <div class="panel__head-row">
+            <h2 id="dash-charts-title" class="panel__h2">Grafikler</h2>
+            <p class="panel__sub">Haftalık karşılaştırma · hedef · aktivite</p>
+          </div>
+          <div class="charts-grid">
+            <article class="chart-card">
+              <h3 class="chart-card__title">Bu hafta vs geçen hafta</h3>
+              <p class="chart-empty" hidden>Kayıt yok.</p>
+              <div class="chart-card__canvas-wrap">
+                <canvas id="dashboard-chart-week-compare" role="img" aria-label="Haftalık kategori karşılaştırması"></canvas>
+              </div>
+            </article>
+            <article class="chart-card">
+              <h3 class="chart-card__title">Haftalık hedef (YDS / Teknik)</h3>
+              <p class="chart-empty" hidden>Hedef veya kayıt yok.</p>
+              <div class="chart-card__canvas-wrap">
+                <canvas id="dashboard-chart-goals" role="img" aria-label="Haftalık hedef ve gerçekleşen süre"></canvas>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel panel--activity-heatmap" aria-labelledby="heatmap-title">
+          <div class="panel__head-row">
+            <h2 id="heatmap-title" class="panel__h2">Günlük aktivite</h2>
+            <p class="panel__sub">Son 28 hafta · toplam süre (dk)</p>
+          </div>
+          <div id="dashboard-activity-heatmap" class="activity-heatmap-root"></div>
+        </section>
+
       </div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
   <script src="js/sync-api.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>

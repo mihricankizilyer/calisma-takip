@@ -180,6 +180,28 @@
           </div>
         </section>
 
+        <section class="panel panel--yds-subtype" aria-labelledby="yds-subtype-title">
+          <div class="panel__head-row">
+            <h2 id="yds-subtype-title" class="panel__h2">Alt tür dağılımı</h2>
+            <p class="panel__sub">Son 28 gün · süre (deneme hariç)</p>
+          </div>
+          <p class="chart-empty" id="yds-subtype-empty" hidden>Kayıt yok.</p>
+          <div class="chart-card__canvas-wrap yds-chart-canvas-wrap" id="yds-subtype-canvas-wrap">
+            <canvas id="yds-chart-subtype" role="img" aria-label="YDS alt tür süre dağılımı"></canvas>
+          </div>
+        </section>
+
+        <section class="panel panel--yds-cumulative" aria-labelledby="yds-cumulative-title">
+          <div class="panel__head-row">
+            <h2 id="yds-cumulative-title" class="panel__h2">Kümülatif YDS süresi</h2>
+            <p class="panel__sub">Program başlangıcından itibaren birikimli dakika</p>
+          </div>
+          <p class="chart-empty" id="yds-cumulative-empty" hidden>Kayıt yok.</p>
+          <div class="chart-card__canvas-wrap yds-chart-canvas-wrap" id="yds-cumulative-canvas-wrap">
+            <canvas id="yds-chart-cumulative" role="img" aria-label="Kümülatif YDS çalışma süresi"></canvas>
+          </div>
+        </section>
+
         <section class="panel panel--yds-deneme" aria-labelledby="yds-deneme-title">
           <div class="panel__head-row">
             <h2 id="yds-deneme-title" class="panel__h2">Deneme sonuçları</h2>
