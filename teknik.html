@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Çalışma Takip — Teknik</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="teknik" class="page-teknik">
+  <div class="shell">
+    <aside class="sidebar" aria-label="Ana menü">
+      <div class="sidebar__top">
+        <a href="index.html" class="sidebar__brand">
+          <span class="sidebar__logo" aria-hidden="true">◆</span>
+          <span class="sidebar__app-name">Çalışma Takip</span>
+        </a>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="index.html" class="sidebar__link">Ana sayfa</a>
+        <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
+        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
+        <a href="yds.html" class="sidebar__link">YDS</a>
+        <a href="teknik.html" class="sidebar__link sidebar__link--active" aria-current="page">Teknik</a>
+        <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
+        <a href="notlarim.html" class="sidebar__link">Notlarım</a>
+        <a href="yatirim.html" class="sidebar__link">Yatırım</a>
+        <a href="calendar.html" class="sidebar__link">Takvim</a>
+        <a href="giris.html" class="sidebar__link">Giriş</a>
+        <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
+      </nav>
+    </aside>
+
+    <div class="shell__main">
+      <header class="header">
+        <div class="header__brand header__brand--compact">
+          <div>
+            <h1 class="header__page-title">Teknik çalışma</h1>
+          </div>
+        </div>
+        <div class="header__actions">
+          <a href="yeni-kayit.html" class="btn btn--primary">Teknik kayıt ekle</a>
+          <button type="button" class="btn btn--ghost" id="btn-export">Dışa aktar</button>
+          <label class="btn btn--ghost btn--file">
+            İçe aktar
+            <input type="file" id="import-file" accept="application/json" hidden />
+          </label>
+        </div>
+      </header>
+
+      <div class="shell__content shell__content--teknik" id="teknik-dashboard">
+        <section class="panel panel--teknik-hero" aria-labelledby="teknik-hero-title">
+          <div class="panel__head-row">
+            <h2 id="teknik-hero-title" class="panel__h2">Bu hafta</h2>
+            <p class="panel__sub">Teknik kategorisindeki oturumlar</p>
+          </div>
+          <div class="teknik-hero-stat">
+            <span class="teknik-hero-stat__label">Toplam süre</span>
+            <strong class="teknik-hero-stat__val"><span id="teknik-stat-week">0</span> dk</strong>
+          </div>
+        </section>
+
+        <section class="panel panel--teknik-chart" aria-labelledby="teknik-trend-title">
+          <div class="panel__head-row">
+            <h2 id="teknik-trend-title" class="panel__h2">Son 14 gün</h2>
+            <p class="panel__sub">Günlük teknik çalışma süresi (dakika)</p>
+          </div>
+          <p class="chart-empty teknik-chart-empty" id="teknik-chart-trend-empty" hidden>Kayıt yok.</p>
+          <div class="chart-card__canvas-wrap teknik-chart-wrap" id="teknik-chart-trend-wrap">
+            <canvas id="teknik-chart-trend" role="img" aria-label="Son on dört gün teknik süre grafiği"></canvas>
+          </div>
+        </section>
+
+        <section class="panel panel--teknik-chart" aria-labelledby="teknik-topic-title">
+          <div class="panel__head-row">
+            <h2 id="teknik-topic-title" class="panel__h2">Konuya göre süre</h2>
+            <p class="panel__sub">Tüm zamanlar — konu alanına göre</p>
+          </div>
+          <p class="chart-empty teknik-chart-empty" id="teknik-chart-topics-empty" hidden>Kayıt yok.</p>
+          <div class="chart-card__canvas-wrap teknik-chart-wrap" id="teknik-chart-topics-wrap">
+            <canvas id="teknik-chart-topics" role="img" aria-label="Teknik konu dağılımı"></canvas>
+          </div>
+        </section>
+
+        <section class="panel panel--teknik-list" aria-labelledby="teknik-list-title">
+          <div class="panel__head-row">
+            <h2 id="teknik-list-title" class="panel__h2">Son kayıtlar</h2>
+            <p class="panel__sub">En yeni 40 oturum</p>
+          </div>
+          <ul id="teknik-session-list" class="teknik-session-list"></ul>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="js/sync-api.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>

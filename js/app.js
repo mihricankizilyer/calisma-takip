@@ -1453,6 +1453,8 @@
   var ydsDenemeChart = null;
   var ydsSubtypeChart = null;
   var ydsCumulativeChart = null;
+  var teknikTrendChart = null;
+  var teknikTopicChart = null;
 
   var timerElapsedSec = 0;
   var timerInterval = null;
@@ -1544,7 +1546,7 @@
       btnExport: q("btn-export"),
       importFile: q("import-file"),
     };
-  } else if (page === "kitaplar" || page === "yatirim" || page === "yds" || page === "notlarim") {
+  } else if (page === "kitaplar" || page === "yatirim" || page === "yds" || page === "notlarim" || page === "teknik") {
     el = {
       btnExport: q("btn-export"),
       importFile: q("import-file"),
@@ -2760,6 +2762,238 @@
     if (page === "kitaplar") renderKitaplarPage();
     if (page === "yatirim") renderYatirimPage();
     if (page === "yds") renderYdsPage();
+    if (page === "teknik") renderTeknikPage();
+  }
+
+  function destroyTeknikCharts() {
+    if (typeof Chart === "undefined") return;
+    if (teknikTrendChart) {
+      teknikTrendChart.destroy();
+      teknikTrendChart = null;
+    }
+    if (teknikTopicChart) {
+      teknikTopicChart.destroy();
+      teknikTopicChart = null;
+    }
+  }
+
+  function weeklyTechnicalMinutes() {
+    var sum = 0;
+    state.sessions.forEach(function (s) {
+      if (String(s.category || "").trim() !== "technical") return;
+      if (!isInCurrentWeek(sessionEffectiveTime(s))) return;
+      sum += s.durationMinutes || 0;
+    });
+    return sum;
+  }
+
+  function renderTeknikPage() {
+    if (!document.getElementById("teknik-dashboard")) return;
+    state = loadState();
+    destroyTeknikCharts();
+
+    var wk = document.getElementById("teknik-stat-week");
+    if (wk) wk.textContent = formatMinutesForDisplay(weeklyTechnicalMinutes());
+
+    var canvasTrend = document.getElementById("teknik-chart-trend");
+    var emptyTrend = document.getElementById("teknik-chart-trend-empty");
+    var wrapTrend = document.getElementById("teknik-chart-trend-wrap");
+    var sum14 = 0;
+    if (canvasTrend && typeof Chart !== "undefined") {
+      var labels = [];
+      var dataMin = [];
+      var t;
+      for (t = 13; t >= 0; t--) {
+        var dt = new Date();
+        dt.setHours(0, 0, 0, 0);
+        dt.setDate(dt.getDate() - t);
+        var dk = dateKeyLocal(dt);
+        labels.push(dt.getDate() + " " + MONTH_SHORT_TR[dt.getMonth()]);
+        var dm = 0;
+        state.sessions.forEach(function (s) {
+          if (String(s.category || "").trim() !== "technical") return;
+          var iso = sessionEffectiveTime(s);
+          if (!iso) return;
+          if (dateKeyLocal(new Date(iso)) !== dk) return;
+          dm += s.durationMinutes || 0;
+        });
+        dataMin.push(dm);
+        sum14 += dm;
+      }
+      if (sum14 <= 0) {
+        if (emptyTrend) {
+          emptyTrend.hidden = false;
+          emptyTrend.textContent = "Son 14 günde teknik kayıt yok.";
+        }
+        if (wrapTrend) wrapTrend.hidden = true;
+      } else {
+        if (emptyTrend) emptyTrend.hidden = true;
+        if (wrapTrend) wrapTrend.hidden = false;
+        teknikTrendChart = new Chart(canvasTrend, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Teknik (dk)",
+                data: dataMin,
+                borderColor: "#7c3aed",
+                backgroundColor: "rgba(124, 58, 237, 0.12)",
+                fill: true,
+                tension: 0.25,
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              x: { grid: { display: false } },
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: "Dakika" },
+                ticks: {
+                  callback: function (v) {
+                    return v + " dk";
+                  },
+                },
+              },
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
+                    return "Süre: " + v + " dk";
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+    }
+
+    var canvasTopic = document.getElementById("teknik-chart-topics");
+    var emptyTopic = document.getElementById("teknik-chart-topics-empty");
+    var wrapTopic = document.getElementById("teknik-chart-topics-wrap");
+    var topicAgg = {};
+    state.sessions.forEach(function (s) {
+      if (String(s.category || "").trim() !== "technical") return;
+      var key = s.techTopic && String(s.techTopic).trim() ? String(s.techTopic).trim() : "Konu belirtilmedi";
+      topicAgg[key] = (topicAgg[key] || 0) + (s.durationMinutes || 0);
+    });
+    var topicKeys = Object.keys(topicAgg).filter(function (k) {
+      return topicAgg[k] > 0;
+    });
+    var topicSum = 0;
+    var tk;
+    for (tk = 0; tk < topicKeys.length; tk++) {
+      topicSum += topicAgg[topicKeys[tk]];
+    }
+
+    if (canvasTopic && typeof Chart !== "undefined") {
+      if (topicSum <= 0) {
+        if (emptyTopic) {
+          emptyTopic.hidden = false;
+          emptyTopic.textContent = "Henüz teknik kayıt yok.";
+        }
+        if (wrapTopic) wrapTopic.hidden = true;
+      } else {
+        if (emptyTopic) emptyTopic.hidden = true;
+        if (wrapTopic) wrapTopic.hidden = false;
+        var colors = ["#7c3aed", "#a78bfa", "#c4b5fd", "#8b5cf6", "#6d28d9", "#5b21b6", "#4c1d95", "#7e22ce"];
+        topicKeys.sort(function (a, b) {
+          return topicAgg[b] - topicAgg[a];
+        });
+        var labelsT = [];
+        var dataT = [];
+        var colorsT = [];
+        var ci;
+        for (ci = 0; ci < topicKeys.length; ci++) {
+          var kk = topicKeys[ci];
+          labelsT.push(kk);
+          dataT.push(topicAgg[kk]);
+          colorsT.push(colors[ci % colors.length]);
+        }
+        teknikTopicChart = new Chart(canvasTopic, {
+          type: "doughnut",
+          data: {
+            labels: labelsT,
+            datasets: [{ data: dataT, backgroundColor: colorsT, borderWidth: 0 }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "55%",
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: { boxWidth: 12, padding: 8, font: { size: 11 } },
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    var v = ctx.raw != null ? ctx.raw : 0;
+                    return (ctx.label || "") + ": " + v + " dk";
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+    }
+
+    var listEl = document.getElementById("teknik-session-list");
+    if (listEl) {
+      var rows = [];
+      state.sessions.forEach(function (s) {
+        if (String(s.category || "").trim() !== "technical") return;
+        var iso = sessionEffectiveTime(s);
+        var tt = iso ? new Date(iso).getTime() : 0;
+        rows.push({ s: s, t: tt });
+      });
+      rows.sort(function (a, b) {
+        return b.t - a.t;
+      });
+      var limit = 40;
+      var html = [];
+      var ri;
+      for (ri = 0; ri < rows.length && ri < limit; ri++) {
+        var s = rows[ri].s;
+        var topicTxt = s.techTopic && String(s.techTopic).trim() ? String(s.techTopic).trim() : "";
+        var metaBits = [];
+        if (topicTxt) metaBits.push(topicTxt);
+        if (s.tags && s.tags.length) metaBits.push(s.tags.join(", "));
+        var metaStr = metaBits.length ? escapeHtml(metaBits.join(" · ")) : "";
+        html.push(
+          '<li class="teknik-session-item">' +
+            '<div class="teknik-session-item__row">' +
+            '<span class="teknik-session-item__mins">' +
+            escapeHtml(formatMinutesForDisplay(s.durationMinutes || 0)) +
+            ' dk</span>' +
+            '<span class="teknik-session-item__date">' +
+            escapeHtml(formatSessionDate(sessionEffectiveTime(s))) +
+            "</span></div>" +
+            (metaStr ? '<div class="teknik-session-item__meta">' + metaStr + "</div>" : "") +
+            (s.note
+              ? '<p class="teknik-session-item__note">' + escapeHtml(s.note) + "</p>"
+              : "") +
+            '<button type="button" class="btn btn--ghost btn--small teknik-session-item__del" data-teknik-delete="' +
+            escapeHtml(s.id) +
+            '">Sil</button></li>'
+        );
+      }
+      listEl.innerHTML = rows.length
+        ? html.join("")
+        : '<li class="teknik-session-empty">Teknik kayıt yok. <a href="yeni-kayit.html">Kayıt ekle</a> — kategori olarak Teknik seç.</li>';
+    }
   }
 
   function rollupAddScore(aggRow, s) {
@@ -4726,6 +4960,21 @@
     initYdsPage();
   } else if (page === "calendar") {
     initCalendarPage();
+  } else if (page === "teknik") {
+    bindExportClick();
+    attachStandardImport();
+    var tdDash = document.getElementById("teknik-dashboard");
+    if (tdDash && !tdDash.dataset.teknikBound) {
+      tdDash.dataset.teknikBound = "1";
+      tdDash.addEventListener("click", function (e) {
+        var delBtn = e.target.closest("[data-teknik-delete]");
+        if (!delBtn) return;
+        var sid = delBtn.getAttribute("data-teknik-delete");
+        if (!sid || !confirm("Bu teknik kaydını silmek istiyor musunuz?")) return;
+        deleteSession(sid);
+      });
+    }
+    renderTeknikPage();
   } else if (page === "notlarim") {
     bindExportClick();
     attachStandardImport();
@@ -4743,6 +4992,7 @@
     else if (page === "yatirim") renderYatirimPage();
     else if (page === "yds") renderYdsPage();
     else if (page === "notlarim") renderNotlarimPage();
+    else if (page === "teknik") renderTeknikPage();
     else if (page === "calendar" && typeof window !== "undefined" && window.__calismaCalendarRefresh) {
       window.__calismaCalendarRefresh();
     }

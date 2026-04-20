@@ -3293,3 +3293,101 @@ body {
   display: flex;
   justify-content: flex-end;
 }
+
+/* —— Teknik sayfası —— */
+.shell__content--teknik .panel--teknik-hero {
+  margin-bottom: 1rem;
+}
+
+.teknik-hero-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), var(--surface2));
+}
+
+.teknik-hero-stat__label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.teknik-hero-stat__val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #5b21b6;
+}
+
+.teknik-chart-wrap {
+  height: 260px;
+  min-height: 200px;
+}
+
+.teknik-chart-empty {
+  margin: 0 0 0.75rem;
+}
+
+.teknik-session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.teknik-session-item {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  padding: 0.75rem 1rem;
+  position: relative;
+  padding-bottom: 2.5rem;
+}
+
+.teknik-session-item__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.teknik-session-item__mins {
+  font-weight: 600;
+  color: #5b21b6;
+}
+
+.teknik-session-item__date {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.teknik-session-item__meta {
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.teknik-session-item__note {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.teknik-session-item__del {
+  position: absolute;
+  right: 0.65rem;
+  bottom: 0.55rem;
+}
+
+.teknik-session-empty {
+  list-style: none;
+  padding: 1rem 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
