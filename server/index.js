@@ -127,6 +127,7 @@ function defaultPayload() {
       streakMinMinutesPerDay: 15,
     },
     yds: {},
+    noteCategories: [],
   };
 }
 

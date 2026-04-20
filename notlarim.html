@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Çalışma Takip — Kitaplar</title>
+  <title>Çalışma Takip — Notlarım</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body data-page="kitaplar" class="page-kitaplar">
+<body data-page="notlarim" class="page-notlarim">
   <div class="shell">
     <aside class="sidebar" aria-label="Ana menü">
       <div class="sidebar__top">
@@ -23,8 +23,8 @@
         <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
         <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
         <a href="yds.html" class="sidebar__link">YDS</a>
-        <a href="kitaplar.html" class="sidebar__link sidebar__link--active" aria-current="page">Kitaplar</a>
-        <a href="notlarim.html" class="sidebar__link">Notlarım</a>
+        <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
+        <a href="notlarim.html" class="sidebar__link sidebar__link--active" aria-current="page">Notlarım</a>
         <a href="yatirim.html" class="sidebar__link">Yatırım</a>
         <a href="calendar.html" class="sidebar__link">Takvim</a>
         <a href="giris.html" class="sidebar__link">Giriş</a>
@@ -36,11 +36,10 @@
       <header class="header">
         <div class="header__brand header__brand--compact">
           <div>
-            <h1 class="header__page-title">Kitaplar</h1>
+            <h1 class="header__page-title">Notlarım</h1>
           </div>
         </div>
         <div class="header__actions">
-          <a href="yeni-kayit.html" class="btn btn--primary">Okuma ekle</a>
           <button type="button" class="btn btn--ghost" id="btn-export">Dışa aktar</button>
           <label class="btn btn--ghost btn--file">
             İçe aktar
@@ -49,43 +48,35 @@
         </div>
       </header>
 
-      <div class="shell__content shell__content--kitaplar">
-        <section class="panel panel--kitaplar-stats" aria-labelledby="kitap-stats-title">
+      <div class="shell__content shell__content--notlarim" id="notlarim-root">
+        <section class="panel panel--notlarim" aria-labelledby="notlarim-title">
           <div class="panel__head-row">
-            <h2 id="kitap-stats-title" class="panel__h2">Özet</h2>
-            <p class="panel__sub">Hafta · ay · yıl</p>
+            <h2 id="notlarim-title" class="panel__h2">Kategoriler ve notlar</h2>
+            <p class="panel__sub">Teknik konular, okunacak kitaplar — kendi başlıklarınızı ekleyin</p>
           </div>
-          <div class="kitaplar-stats-grid" id="kitaplar-stats-grid" role="list"></div>
-        </section>
 
-        <section class="panel" aria-labelledby="fin-title">
-          <h2 id="fin-title" class="panel__h2">Bitirilen kitaplar</h2>
-          <div class="table-scroll kitaplar-table-wrap">
-            <table class="data-table data-table--kitaplar">
-              <thead>
-                <tr>
-                  <th>Kitap</th>
-                  <th>Yazar</th>
-                  <th>Başlangıç</th>
-                  <th>Bitiş</th>
-                  <th>Süre</th>
-                  <th>Okunan</th>
-                  <th>Toplam syf</th>
-                  <th>Gün</th>
-                  <th class="kitaplar-th--icon" scope="col"><span class="sr-only">Uygula</span></th>
-                  <th class="kitaplar-th--icon" scope="col"><span class="sr-only">Sil</span></th>
-                </tr>
-              </thead>
-              <tbody id="kitaplar-finished-body"></tbody>
-            </table>
+          <div class="notlarim-layout">
+            <aside class="notlarim-sidebar" aria-label="Kategori listesi">
+              <div class="notlarim-cat-add">
+                <label for="notes-new-category-title" class="sr-only">Yeni kategori adı</label>
+                <input
+                  type="text"
+                  id="notes-new-category-title"
+                  class="notlarim-input"
+                  placeholder="Yeni kategori adı"
+                  maxlength="120"
+                  autocomplete="off"
+                />
+                <button type="button" class="btn btn--primary btn--small" id="notes-add-category">Ekle</button>
+              </div>
+              <ul id="notes-category-list" class="notlarim-cat-list"></ul>
+            </aside>
+
+            <div class="notlarim-main" id="notes-main-inner">
+              <p class="notlarim-placeholder">Sol taraftan kategori seçin veya yeni kategori oluşturun.</p>
+            </div>
           </div>
         </section>
-
-        <section class="panel" aria-labelledby="tl-title">
-          <h2 id="tl-title" class="panel__h2">Okuma tarihçesi</h2>
-          <div class="kitaplar-timeline" id="kitaplar-timeline"></div>
-        </section>
-
       </div>
     </div>
   </div>

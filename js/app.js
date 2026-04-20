@@ -55,6 +55,7 @@
         streakMinMinutesPerDay: 15,
       },
       yds: defaultYds(),
+      noteCategories: [],
     };
   }
 
@@ -69,6 +70,14 @@
       if (s.category != null) s.category = String(s.category).trim();
       if (!s.category && (s.cat === "investment" || s.type === "investment")) s.category = "investment";
     });
+    if (!data.noteCategories || !Array.isArray(data.noteCategories)) data.noteCategories = [];
+    var _ncClean = [];
+    var _nci;
+    for (_nci = 0; _nci < data.noteCategories.length; _nci++) {
+      var _nc = normalizeNoteCategory(data.noteCategories[_nci]);
+      if (_nc) _ncClean.push(_nc);
+    }
+    data.noteCategories = _ncClean;
     return data;
   }
 
@@ -1221,6 +1230,30 @@
     return "s_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
   }
 
+  function normalizeNoteItem(n) {
+    if (!n || typeof n !== "object") return null;
+    var body = typeof n.body === "string" ? n.body : "";
+    var nid = typeof n.id === "string" && n.id.trim() ? n.id.trim() : uid();
+    var createdAt = typeof n.createdAt === "string" ? n.createdAt : new Date().toISOString();
+    return { id: nid, body: body, createdAt: createdAt };
+  }
+
+  function normalizeNoteCategory(cat) {
+    if (!cat || typeof cat !== "object") return null;
+    var cid = typeof cat.id === "string" && cat.id.trim() ? cat.id.trim() : uid();
+    var title = typeof cat.title === "string" ? cat.title.trim() : "";
+    if (!title) title = "Adsız";
+    var notes = [];
+    if (Array.isArray(cat.notes)) {
+      var ni;
+      for (ni = 0; ni < cat.notes.length; ni++) {
+        var item = normalizeNoteItem(cat.notes[ni]);
+        if (item) notes.push(item);
+      }
+    }
+    return { id: cid, title: title, notes: notes };
+  }
+
   var enSkillLabels = {
     dinleme: "Dinleme",
     konusma: "Konuşma",
@@ -1511,7 +1544,7 @@
       btnExport: q("btn-export"),
       importFile: q("import-file"),
     };
-  } else if (page === "kitaplar" || page === "yatirim" || page === "yds") {
+  } else if (page === "kitaplar" || page === "yatirim" || page === "yds" || page === "notlarim") {
     el = {
       btnExport: q("btn-export"),
       importFile: q("import-file"),
@@ -3824,6 +3857,203 @@
     return div.innerHTML;
   }
 
+  function findNoteCategoryById(state, id) {
+    var i;
+    for (i = 0; i < state.noteCategories.length; i++) {
+      if (state.noteCategories[i].id === id) return state.noteCategories[i];
+    }
+    return null;
+  }
+
+  function getNotlarimSelectedCategoryId(state) {
+    var sid = sessionStorage.getItem("notlarimCatId");
+    if (sid && findNoteCategoryById(state, sid)) return sid;
+    if (state.noteCategories.length) return state.noteCategories[0].id;
+    return null;
+  }
+
+  function renderNotlarimPage() {
+    var root = document.getElementById("notlarim-root");
+    if (!root) return;
+    state = loadState();
+    if (!state.noteCategories) state.noteCategories = [];
+    var listEl = document.getElementById("notes-category-list");
+    var mainEl = document.getElementById("notes-main-inner");
+    if (!listEl || !mainEl) return;
+
+    var selId = getNotlarimSelectedCategoryId(state);
+    if (selId) sessionStorage.setItem("notlarimCatId", selId);
+    else sessionStorage.removeItem("notlarimCatId");
+
+    var parts = [];
+    var ci;
+    for (ci = 0; ci < state.noteCategories.length; ci++) {
+      var c = state.noteCategories[ci];
+      var active = c.id === selId ? " notlarim-cat-btn--active" : "";
+      parts.push(
+        '<li class="notlarim-cat-item"><button type="button" class="notlarim-cat-btn' +
+          active +
+          '" data-notes-select="' +
+          escapeHtml(c.id) +
+          '">' +
+          escapeHtml(c.title) +
+          "</button></li>"
+      );
+    }
+    listEl.innerHTML = parts.length
+      ? parts.join("")
+      : '<li class="notlarim-cat-empty">Henüz kategori yok. Soldan ekleyin.</li>';
+
+    var cat = selId ? findNoteCategoryById(state, selId) : null;
+    if (!cat) {
+      mainEl.innerHTML =
+        '<p class="notlarim-placeholder">Sol taraftan kategori seçin veya yeni kategori oluşturun.</p>';
+      return;
+    }
+
+    var notesHtml = [];
+    var sorted = cat.notes.slice().sort(function (a, b) {
+      return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+    });
+    for (ci = 0; ci < sorted.length; ci++) {
+      var n = sorted[ci];
+      notesHtml.push(
+        '<article class="notlarim-note" data-note-id="' +
+          escapeHtml(n.id) +
+          '"><div class="notlarim-note__body">' +
+          escapeHtml(n.body) +
+          '</div><div class="notlarim-note__foot"><button type="button" class="btn btn--ghost btn--small" data-notes-delete-note="' +
+          escapeHtml(n.id) +
+          '" data-notes-cat-id="' +
+          escapeHtml(cat.id) +
+          '">Sil</button></div></article>'
+      );
+    }
+
+    mainEl.innerHTML =
+      '<div class="notlarim-cat-toolbar">' +
+      '<h2 class="notlarim-cat-title">' +
+      escapeHtml(cat.title) +
+      '</h2><div class="notlarim-cat-actions">' +
+      '<button type="button" class="btn btn--ghost btn--small" data-notes-rename-cat="' +
+      escapeHtml(cat.id) +
+      '">Adı değiştir</button>' +
+      '<button type="button" class="btn btn--ghost btn--small notlarim-btn--danger" data-notes-delete-cat="' +
+      escapeHtml(cat.id) +
+      '">Kategoriyi sil</button>' +
+      "</div></div>" +
+      '<div class="notlarim-compose"><label for="notes-draft-body" class="sr-only">Yeni not</label>' +
+      '<textarea id="notes-draft-body" class="notlarim-textarea" rows="4" placeholder="Not yazın…"></textarea>' +
+      '<button type="button" class="btn btn--primary" data-notes-add-note="' +
+      escapeHtml(cat.id) +
+      '">Not ekle</button></div>' +
+      '<div class="notlarim-notes-list">' +
+      (notesHtml.length ? notesHtml.join("") : '<p class="notlarim-notes-empty">Bu kategoride henüz not yok.</p>') +
+      "</div>";
+  }
+
+  function initNotlarimPage() {
+    var root = document.getElementById("notlarim-root");
+    if (!root || root.dataset.bound) return;
+    root.dataset.bound = "1";
+
+    var btnAddCat = document.getElementById("notes-add-category");
+    if (btnAddCat) {
+      btnAddCat.addEventListener("click", function () {
+        var inp = document.getElementById("notes-new-category-title");
+        var title = inp && inp.value ? String(inp.value).trim() : "";
+        if (!title) {
+          alert("Kategori adı girin.");
+          return;
+        }
+        state = loadState();
+        if (!state.noteCategories) state.noteCategories = [];
+        var nid = uid();
+        state.noteCategories.push({ id: nid, title: title, notes: [] });
+        sessionStorage.setItem("notlarimCatId", nid);
+        if (inp) inp.value = "";
+        saveState(state);
+        renderNotlarimPage();
+      });
+    }
+
+    root.addEventListener("click", function (e) {
+      var sel = e.target.closest("[data-notes-select]");
+      if (sel) {
+        var sid = sel.getAttribute("data-notes-select");
+        if (sid) {
+          sessionStorage.setItem("notlarimCatId", sid);
+          renderNotlarimPage();
+        }
+        return;
+      }
+      var ren = e.target.closest("[data-notes-rename-cat]");
+      if (ren) {
+        var cid = ren.getAttribute("data-notes-rename-cat");
+        state = loadState();
+        var c = findNoteCategoryById(state, cid);
+        if (!c) return;
+        var nt = prompt("Yeni kategori adı", c.title);
+        if (nt == null) return;
+        nt = String(nt).trim();
+        if (!nt) {
+          alert("Ad boş olamaz.");
+          return;
+        }
+        c.title = nt;
+        saveState(state);
+        renderNotlarimPage();
+        return;
+      }
+      var delc = e.target.closest("[data-notes-delete-cat]");
+      if (delc) {
+        var cid2 = delc.getAttribute("data-notes-delete-cat");
+        if (!confirm("Bu kategori ve içindeki tüm notlar silinsin mi?")) return;
+        state = loadState();
+        state.noteCategories = state.noteCategories.filter(function (x) {
+          return x.id !== cid2;
+        });
+        if (sessionStorage.getItem("notlarimCatId") === cid2) {
+          sessionStorage.removeItem("notlarimCatId");
+        }
+        saveState(state);
+        renderNotlarimPage();
+        return;
+      }
+      var deln = e.target.closest("[data-notes-delete-note]");
+      if (deln) {
+        var noteId = deln.getAttribute("data-notes-delete-note");
+        var catId = deln.getAttribute("data-notes-cat-id");
+        state = loadState();
+        var c2 = findNoteCategoryById(state, catId);
+        if (!c2 || !noteId) return;
+        c2.notes = c2.notes.filter(function (nn) {
+          return nn.id !== noteId;
+        });
+        saveState(state);
+        renderNotlarimPage();
+        return;
+      }
+      var addn = e.target.closest("[data-notes-add-note]");
+      if (addn) {
+        var catId3 = addn.getAttribute("data-notes-add-note");
+        var ta = document.getElementById("notes-draft-body");
+        var body = ta ? String(ta.value || "").trim() : "";
+        if (!body) {
+          alert("Not metni yazın.");
+          return;
+        }
+        state = loadState();
+        var c3 = findNoteCategoryById(state, catId3);
+        if (!c3) return;
+        c3.notes.push({ id: uid(), body: body, createdAt: new Date().toISOString() });
+        saveState(state);
+        renderNotlarimPage();
+        return;
+      }
+    });
+  }
+
   function deleteSession(id) {
     state.sessions = state.sessions.filter(function (s) {
       return s.id !== id;
@@ -3879,15 +4109,12 @@
   function onImportFileLoaded(readerResult) {
     var data = JSON.parse(readerResult);
     if (!data.sessions || !Array.isArray(data.sessions)) throw new Error("Geçersiz dosya");
-    if (!data.goals) data.goals = { weeklyMinutesEnglish: 0, weeklyMinutesTechnical: 0 };
-    if (data.goals.streakMinMinutesPerDay == null) data.goals.streakMinMinutesPerDay = 15;
-    if (!data.books || !Array.isArray(data.books)) data.books = [];
-    state = data;
-    state.yds = mergeYds(state.yds);
+    state = normalizeStateObject(data);
     saveState(state);
     renderStats();
     renderList();
     refreshBookInvestPages();
+    if (page === "notlarim") renderNotlarimPage();
     if (page === "yeni" && el.bookSelect) populateBookSelect();
   }
 
@@ -4499,6 +4726,11 @@
     initYdsPage();
   } else if (page === "calendar") {
     initCalendarPage();
+  } else if (page === "notlarim") {
+    bindExportClick();
+    attachStandardImport();
+    initNotlarimPage();
+    renderNotlarimPage();
   }
 
   function refreshAfterServerSync() {
@@ -4510,6 +4742,7 @@
     else if (page === "kitaplar") renderKitaplarPage();
     else if (page === "yatirim") renderYatirimPage();
     else if (page === "yds") renderYdsPage();
+    else if (page === "notlarim") renderNotlarimPage();
     else if (page === "calendar" && typeof window !== "undefined" && window.__calismaCalendarRefresh) {
       window.__calismaCalendarRefresh();
     }

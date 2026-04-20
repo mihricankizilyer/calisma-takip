@@ -3118,3 +3118,178 @@ body {
   color: var(--muted);
   line-height: 1.4;
 }
+
+/* —— Notlarım —— */
+.shell__content--notlarim {
+  max-width: 100%;
+}
+
+.notlarim-layout {
+  display: grid;
+  grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .notlarim-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.notlarim-sidebar {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  padding: 0.85rem 1rem;
+}
+
+.notlarim-cat-add {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.notlarim-input {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font: inherit;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.notlarim-cat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: min(60vh, 28rem);
+  overflow-y: auto;
+}
+
+.notlarim-cat-empty {
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0.5rem 0;
+}
+
+.notlarim-cat-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.notlarim-cat-btn:hover {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: var(--border);
+}
+
+.notlarim-cat-btn--active {
+  background: #fff;
+  border-color: rgba(30, 58, 95, 0.35);
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.notlarim-main {
+  min-width: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 1rem 1.1rem;
+}
+
+.notlarim-placeholder,
+.notlarim-notes-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.notlarim-cat-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.notlarim-cat-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.notlarim-cat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.notlarim-btn--danger {
+  color: #b91c1c;
+}
+
+.notlarim-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.notlarim-textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  resize: vertical;
+  min-height: 5rem;
+  background: #fff;
+}
+
+.notlarim-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notlarim-note {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  padding: 0.75rem 0.9rem;
+}
+
+.notlarim-note__body {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.notlarim-note__foot {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
