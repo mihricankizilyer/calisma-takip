@@ -1295,7 +1295,6 @@
       var te = parseNonNegInt(c.trEng);
       var et = parseNonNegInt(c.engTr);
       var pa = parseNonNegInt(c.passage);
-      var ls = parseNonNegInt(c.listening);
       var par = parseNonNegInt(c.paragrafAtama);
       var dn = parseNonNegInt(c.deneme);
       if (g) parts.push("Gr:" + g);
@@ -1303,7 +1302,6 @@
       if (te) parts.push("TR→EN:" + te);
       if (et) parts.push("EN→TR:" + et);
       if (pa) parts.push("Passage:" + pa);
-      if (ls) parts.push("Listening:" + ls);
       if (par) parts.push("Par.:" + par);
       if (dn) parts.push("Deneme:" + dn);
     }
@@ -1491,7 +1489,7 @@
       enQTrEng: q("en-q-tr-eng"),
       enQEngTr: q("en-q-eng-tr"),
       enQPassage: q("en-q-passage"),
-      enQListening: q("en-q-listening"),
+      enListeningMin: q("en-listening-min"),
       enQParagraf: q("en-q-paragraf"),
       enQDeneme: q("en-q-deneme"),
       wrapEnDy: q("wrap-en-dy"),
@@ -1563,8 +1561,8 @@
   function syncEnglishSubtypeUI() {
     if (!el.wrapEnDetail || !el.enSubtype) return;
     var st = el.enSubtype.value;
-    var showOther = ["cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "deneme"].indexOf(st) >= 0;
-    var showDy = ["grammar", "cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "deneme"].indexOf(st) >= 0;
+    var showOther = ["cloze", "tr_eng", "eng_tr", "passage", "paragraf", "deneme"].indexOf(st) >= 0;
+    var showDy = ["grammar", "cloze", "tr_eng", "eng_tr", "passage", "paragraf", "deneme"].indexOf(st) >= 0;
     el.wrapEnDetail.querySelectorAll(".form-en-panel[data-en-panel]").forEach(function (p) {
       var key = p.getAttribute("data-en-panel");
       p.classList.toggle("form-en-panel--hidden", key !== st);
@@ -2749,7 +2747,7 @@
     if (st === "tr_eng") return parseNonNegInt(c.trEng);
     if (st === "eng_tr") return parseNonNegInt(c.engTr);
     if (st === "passage") return parseNonNegInt(c.passage);
-    if (st === "listening") return parseNonNegInt(c.listening);
+    if (st === "listening") return 0;
     if (st === "paragraf") return parseNonNegInt(c.paragrafAtama);
     if (st === "deneme") return parseNonNegInt(c.deneme);
     if (st === "kelime") return 0;
@@ -4092,7 +4090,10 @@
         } else if (stT === "calisma" && el.enCalismaMin) {
           el.enCalismaMin.value = mins > 0 ? String(mins) : "";
           el.enCalismaMin.focus();
-        } else if (["cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "deneme"].indexOf(stT) >= 0 && el.enOtherMin) {
+        } else if (stT === "listening" && el.enListeningMin) {
+          el.enListeningMin.value = mins > 0 ? String(mins) : "";
+          el.enListeningMin.focus();
+        } else if (["cloze", "tr_eng", "eng_tr", "passage", "paragraf", "deneme"].indexOf(stT) >= 0 && el.enOtherMin) {
           el.enOtherMin.value = mins > 0 ? String(mins) : "";
           el.enOtherMin.focus();
         }
@@ -4133,7 +4134,7 @@
       if (el.enQTrEng) el.enQTrEng.value = "";
       if (el.enQEngTr) el.enQEngTr.value = "";
       if (el.enQPassage) el.enQPassage.value = "";
-      if (el.enQListening) el.enQListening.value = "";
+      if (el.enListeningMin) el.enListeningMin.value = "";
       if (el.enQParagraf) el.enQParagraf.value = "";
       if (el.enQDeneme) el.enQDeneme.value = "";
       if (el.enGrammarMin) el.enGrammarMin.value = "";
@@ -4167,7 +4168,6 @@
         var qTe = el.enQTrEng ? parseNonNegInt(el.enQTrEng.value) : 0;
         var qEt = el.enQEngTr ? parseNonNegInt(el.enQEngTr.value) : 0;
         var qPa = el.enQPassage ? parseNonNegInt(el.enQPassage.value) : 0;
-        var qLi = el.enQListening ? parseNonNegInt(el.enQListening.value) : 0;
         var qPar = el.enQParagraf ? parseNonNegInt(el.enQParagraf.value) : 0;
         var qDen = el.enQDeneme ? parseNonNegInt(el.enQDeneme.value) : 0;
         var scForm = readEnScoreFromForm(el);
@@ -4177,7 +4177,6 @@
         else if (st === "tr_eng") qFor = qTe;
         else if (st === "eng_tr") qFor = qEt;
         else if (st === "passage") qFor = qPa;
-        else if (st === "listening") qFor = qLi;
         else if (st === "paragraf") qFor = qPar;
         else if (st === "deneme") qFor = qDen;
         if (qFor > 0 && !validateEnScoreVsQ(qFor, scForm)) return;
@@ -4204,9 +4203,9 @@
           if (qPa > 0 || oMin > 0) ok = true;
           duration = oMin > 0 ? oMin : 1;
         } else if (st === "listening") {
-          c.listening = qLi;
-          if (qLi > 0 || oMin > 0) ok = true;
-          duration = oMin > 0 ? oMin : 1;
+          var listM = el.enListeningMin ? parseNonNegMinutes(el.enListeningMin.value) : 0;
+          if (listM > 0) ok = true;
+          duration = listM > 0 ? listM : 1;
         } else if (st === "paragraf") {
           c.paragrafAtama = qPar;
           if (qPar > 0 || oMin > 0) ok = true;
@@ -4259,8 +4258,6 @@
           c2.engTr = el.enQEngTr ? parseNonNegInt(el.enQEngTr.value) : 0;
         } else if (st2 === "passage") {
           c2.passage = el.enQPassage ? parseNonNegInt(el.enQPassage.value) : 0;
-        } else if (st2 === "listening") {
-          c2.listening = el.enQListening ? parseNonNegInt(el.enQListening.value) : 0;
         } else if (st2 === "paragraf") {
           c2.paragrafAtama = el.enQParagraf ? parseNonNegInt(el.enQParagraf.value) : 0;
         } else if (st2 === "deneme") {
@@ -4273,7 +4270,7 @@
         session.enKelimeEzberMinutes = st2 === "kelime" ? kE : 0;
         session.enKelimeSayisi = st2 === "kelime" && kS > 0 ? kS : null;
         var scSave = readEnScoreFromForm(el);
-        if (st2 !== "kelime" && st2 !== "calisma") {
+        if (st2 !== "kelime" && st2 !== "calisma" && st2 !== "listening") {
           session.enScore = { dogru: scSave.dogru, yanlis: scSave.yanlis, bos: scSave.bos };
         }
       } else if (cat === "technical") {
