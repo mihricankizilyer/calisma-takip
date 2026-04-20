@@ -201,6 +201,8 @@
         add("eng_tr", dm);
       } else if (st === "passage") {
         add("passage", dm);
+      } else if (st === "listening") {
+        add("listening", dm);
       } else if (st === "paragraf") {
         add("paragraf", dm);
       } else if (st === "deneme") {
@@ -1259,6 +1261,7 @@
     tr_eng: "TR→EN",
     eng_tr: "EN→TR",
     passage: "Passage",
+    listening: "Listening",
     paragraf: "Paragraf",
     deneme: "Deneme",
     kelime: "Kelime ezber",
@@ -1292,6 +1295,7 @@
       var te = parseNonNegInt(c.trEng);
       var et = parseNonNegInt(c.engTr);
       var pa = parseNonNegInt(c.passage);
+      var ls = parseNonNegInt(c.listening);
       var par = parseNonNegInt(c.paragrafAtama);
       var dn = parseNonNegInt(c.deneme);
       if (g) parts.push("Gr:" + g);
@@ -1299,6 +1303,7 @@
       if (te) parts.push("TR→EN:" + te);
       if (et) parts.push("EN→TR:" + et);
       if (pa) parts.push("Passage:" + pa);
+      if (ls) parts.push("Listening:" + ls);
       if (par) parts.push("Par.:" + par);
       if (dn) parts.push("Deneme:" + dn);
     }
@@ -1486,6 +1491,7 @@
       enQTrEng: q("en-q-tr-eng"),
       enQEngTr: q("en-q-eng-tr"),
       enQPassage: q("en-q-passage"),
+      enQListening: q("en-q-listening"),
       enQParagraf: q("en-q-paragraf"),
       enQDeneme: q("en-q-deneme"),
       wrapEnDy: q("wrap-en-dy"),
@@ -1557,8 +1563,8 @@
   function syncEnglishSubtypeUI() {
     if (!el.wrapEnDetail || !el.enSubtype) return;
     var st = el.enSubtype.value;
-    var showOther = ["cloze", "tr_eng", "eng_tr", "passage", "paragraf", "deneme"].indexOf(st) >= 0;
-    var showDy = ["grammar", "cloze", "tr_eng", "eng_tr", "passage", "paragraf", "deneme"].indexOf(st) >= 0;
+    var showOther = ["cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "deneme"].indexOf(st) >= 0;
+    var showDy = ["grammar", "cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "deneme"].indexOf(st) >= 0;
     el.wrapEnDetail.querySelectorAll(".form-en-panel[data-en-panel]").forEach(function (p) {
       var key = p.getAttribute("data-en-panel");
       p.classList.toggle("form-en-panel--hidden", key !== st);
@@ -2743,6 +2749,7 @@
     if (st === "tr_eng") return parseNonNegInt(c.trEng);
     if (st === "eng_tr") return parseNonNegInt(c.engTr);
     if (st === "passage") return parseNonNegInt(c.passage);
+    if (st === "listening") return parseNonNegInt(c.listening);
     if (st === "paragraf") return parseNonNegInt(c.paragrafAtama);
     if (st === "deneme") return parseNonNegInt(c.deneme);
     if (st === "kelime") return 0;
@@ -2752,6 +2759,7 @@
       parseNonNegInt(c.trEng) +
       parseNonNegInt(c.engTr) +
       parseNonNegInt(c.passage) +
+      parseNonNegInt(c.listening) +
       parseNonNegInt(c.paragrafAtama) +
       parseNonNegInt(c.deneme)
     );
@@ -2869,7 +2877,7 @@
     var rawAgg = englishSubtypeMinutesSince(cutoff);
     if (rawAgg.deneme != null) delete rawAgg.deneme;
 
-    var order = ["calisma", "grammar", "cloze", "tr_eng", "eng_tr", "passage", "paragraf", "kelime"];
+    var order = ["calisma", "grammar", "cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "kelime"];
     var colors = {
       calisma: "#0d9488",
       grammar: "#14b8a6",
@@ -2877,6 +2885,7 @@
       tr_eng: "#a855f7",
       eng_tr: "#6366f1",
       passage: "#d97706",
+      listening: "#0891b2",
       paragraf: "#ea580c",
       kelime: "#059669",
     };
@@ -3439,6 +3448,7 @@
       tr_eng: emptyRow(),
       eng_tr: emptyRow(),
       passage: emptyRow(),
+      listening: emptyRow(),
       paragraf: emptyRow(),
       deneme: emptyRow(),
       kelime: { min: 0, kelimeSay: 0 },
@@ -3469,6 +3479,10 @@
         agg.passage.q += parseNonNegInt(c.passage);
         agg.passage.min += dm;
         rollupAddScore(agg.passage, s);
+      } else if (st === "listening") {
+        agg.listening.q += parseNonNegInt(c.listening);
+        agg.listening.min += dm;
+        rollupAddScore(agg.listening, s);
       } else if (st === "paragraf") {
         agg.paragraf.q += parseNonNegInt(c.paragrafAtama);
         agg.paragraf.min += dm;
@@ -3488,6 +3502,7 @@
         agg.tr_eng.q += parseNonNegInt(c.trEng);
         agg.eng_tr.q += parseNonNegInt(c.engTr);
         agg.passage.q += parseNonNegInt(c.passage);
+        agg.listening.q += parseNonNegInt(c.listening);
         agg.paragraf.q += parseNonNegInt(c.paragrafAtama);
         agg.deneme.q += parseNonNegInt(c.deneme);
         agg.grammar.min += s.enGrammarMinutes || 0;
@@ -3530,6 +3545,7 @@
     row("TR → ENG", agg.tr_eng, null);
     row("ENG → TR", agg.eng_tr, null);
     row("Passage", agg.passage, null);
+    row("Listening", agg.listening, null);
     row("Paragraf atama", agg.paragraf, null);
     row("Deneme", agg.deneme, null);
     if (agg.kelime.min > 0 || agg.kelime.kelimeSay > 0) {
@@ -4076,7 +4092,7 @@
         } else if (stT === "calisma" && el.enCalismaMin) {
           el.enCalismaMin.value = mins > 0 ? String(mins) : "";
           el.enCalismaMin.focus();
-        } else if (["cloze", "tr_eng", "eng_tr", "passage", "paragraf", "deneme"].indexOf(stT) >= 0 && el.enOtherMin) {
+        } else if (["cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "deneme"].indexOf(stT) >= 0 && el.enOtherMin) {
           el.enOtherMin.value = mins > 0 ? String(mins) : "";
           el.enOtherMin.focus();
         }
@@ -4117,6 +4133,7 @@
       if (el.enQTrEng) el.enQTrEng.value = "";
       if (el.enQEngTr) el.enQEngTr.value = "";
       if (el.enQPassage) el.enQPassage.value = "";
+      if (el.enQListening) el.enQListening.value = "";
       if (el.enQParagraf) el.enQParagraf.value = "";
       if (el.enQDeneme) el.enQDeneme.value = "";
       if (el.enGrammarMin) el.enGrammarMin.value = "";
@@ -4150,6 +4167,7 @@
         var qTe = el.enQTrEng ? parseNonNegInt(el.enQTrEng.value) : 0;
         var qEt = el.enQEngTr ? parseNonNegInt(el.enQEngTr.value) : 0;
         var qPa = el.enQPassage ? parseNonNegInt(el.enQPassage.value) : 0;
+        var qLi = el.enQListening ? parseNonNegInt(el.enQListening.value) : 0;
         var qPar = el.enQParagraf ? parseNonNegInt(el.enQParagraf.value) : 0;
         var qDen = el.enQDeneme ? parseNonNegInt(el.enQDeneme.value) : 0;
         var scForm = readEnScoreFromForm(el);
@@ -4159,10 +4177,11 @@
         else if (st === "tr_eng") qFor = qTe;
         else if (st === "eng_tr") qFor = qEt;
         else if (st === "passage") qFor = qPa;
+        else if (st === "listening") qFor = qLi;
         else if (st === "paragraf") qFor = qPar;
         else if (st === "deneme") qFor = qDen;
         if (qFor > 0 && !validateEnScoreVsQ(qFor, scForm)) return;
-        var c = { grammar: 0, cloze: 0, trEng: 0, engTr: 0, passage: 0, paragrafAtama: 0, deneme: 0 };
+        var c = { grammar: 0, cloze: 0, trEng: 0, engTr: 0, passage: 0, listening: 0, paragrafAtama: 0, deneme: 0 };
         var ok = false;
         if (st === "grammar") {
           c.grammar = qG;
@@ -4183,6 +4202,10 @@
         } else if (st === "passage") {
           c.passage = qPa;
           if (qPa > 0 || oMin > 0) ok = true;
+          duration = oMin > 0 ? oMin : 1;
+        } else if (st === "listening") {
+          c.listening = qLi;
+          if (qLi > 0 || oMin > 0) ok = true;
           duration = oMin > 0 ? oMin : 1;
         } else if (st === "paragraf") {
           c.paragrafAtama = qPar;
@@ -4222,7 +4245,7 @@
 
       if (cat === "english") {
         var st2 = el.enSubtype && el.enSubtype.value;
-        var c2 = { grammar: 0, cloze: 0, trEng: 0, engTr: 0, passage: 0, paragrafAtama: 0, deneme: 0 };
+        var c2 = { grammar: 0, cloze: 0, trEng: 0, engTr: 0, passage: 0, listening: 0, paragrafAtama: 0, deneme: 0 };
         var gM = el.enGrammarMin ? parseNonNegMinutes(el.enGrammarMin.value) : 0;
         var kE = el.enKelimeEzberMin ? parseNonNegMinutes(el.enKelimeEzberMin.value) : 0;
         var kS = el.enKelimeSayisi ? parseNonNegInt(el.enKelimeSayisi.value) : 0;
@@ -4236,6 +4259,8 @@
           c2.engTr = el.enQEngTr ? parseNonNegInt(el.enQEngTr.value) : 0;
         } else if (st2 === "passage") {
           c2.passage = el.enQPassage ? parseNonNegInt(el.enQPassage.value) : 0;
+        } else if (st2 === "listening") {
+          c2.listening = el.enQListening ? parseNonNegInt(el.enQListening.value) : 0;
         } else if (st2 === "paragraf") {
           c2.paragrafAtama = el.enQParagraf ? parseNonNegInt(el.enQParagraf.value) : 0;
         } else if (st2 === "deneme") {
