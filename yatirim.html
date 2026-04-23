@@ -166,6 +166,7 @@
                     <th scope="col">
                       <button type="button" class="yatirim-th-btn" data-yatirim-sort="note">Not<span class="yatirim-th__sort" aria-hidden="true"></span></button>
                     </th>
+                    <th scope="col" class="yatirim-th--action">İşlem</th>
                   </tr>
                 </thead>
                 <tbody id="yatirim-table-body"></tbody>
@@ -174,6 +175,56 @@
             <p id="yatirim-empty-filter" class="yatirim-empty-msg yatirim-empty-msg--filter table-muted" hidden>Kayıt yok.</p>
           </div>
         </section>
+
+        <div id="yatirim-edit-overlay" class="yatirim-edit-overlay" hidden>
+          <div class="yatirim-edit-dialog panel" role="dialog" aria-modal="true" aria-labelledby="yatirim-edit-title">
+            <div class="yatirim-edit-dialog__head">
+              <h3 id="yatirim-edit-title" class="panel__h2">İşlemi düzenle</h3>
+              <button type="button" class="btn btn--ghost btn--small" id="yatirim-edit-close" aria-label="Kapat">Kapat</button>
+            </div>
+            <form id="yatirim-edit-form" class="form">
+              <input type="hidden" id="yatirim-edit-session-id" value="" />
+              <div class="form__row">
+                <label for="yatirim-edit-asset">Varlık / konu</label>
+                <input type="text" id="yatirim-edit-asset" autocomplete="off" />
+              </div>
+              <div class="form__row">
+                <label for="yatirim-edit-amount">Tutar (₺, isteğe bağlı)</label>
+                <input type="number" id="yatirim-edit-amount" min="0" step="0.01" />
+              </div>
+              <div class="form__row">
+                <label for="yatirim-edit-share-price">Hisse başına fiyat (₺, isteğe bağlı)</label>
+                <input type="number" id="yatirim-edit-share-price" min="0" step="0.01" />
+              </div>
+              <div class="form__row">
+                <label for="yatirim-edit-action">Tür</label>
+                <select id="yatirim-edit-action">
+                  <option value="arastirma">Araştırma / not</option>
+                  <option value="alis">Alış</option>
+                  <option value="satis">Satış</option>
+                  <option value="gelir">Gelir / temettü</option>
+                  <option value="diger">Diğer</option>
+                </select>
+              </div>
+              <div class="form__row">
+                <label for="yatirim-edit-date">İşlem tarihi</label>
+                <input type="date" id="yatirim-edit-date" />
+              </div>
+              <div class="form__row">
+                <label for="yatirim-edit-time">İşlem saati (isteğe bağlı)</label>
+                <input type="time" id="yatirim-edit-time" step="60" />
+              </div>
+              <div class="form__row">
+                <label for="yatirim-edit-note">Not</label>
+                <textarea id="yatirim-edit-note" rows="3" placeholder="İsteğe bağlı not…"></textarea>
+              </div>
+              <div class="yatirim-edit-dialog__actions">
+                <button type="submit" class="btn btn--primary">Kaydet</button>
+                <button type="button" class="btn btn--ghost" id="yatirim-edit-cancel">Vazgeç</button>
+              </div>
+            </form>
+          </div>
+        </div>
 
       </div>
     </div>

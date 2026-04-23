@@ -1874,6 +1874,18 @@
     return isNaN(dt.getTime()) ? null : dt.toISOString();
   }
 
+  function investIsoToDateTimeParts(iso) {
+    if (!iso) return { date: "", time: "" };
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return { date: "", time: "" };
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    var h = String(d.getHours()).padStart(2, "0");
+    var mi = String(d.getMinutes()).padStart(2, "0");
+    return { date: y + "-" + m + "-" + day, time: h + ":" + mi };
+  }
+
   function sessionEffectiveTime(s) {
     if (!s) return "";
     var cat = String(s.category || "").trim();
@@ -2712,7 +2724,9 @@
       (s.amount != null && !isNaN(s.amount) ? escapeHtml(String(s.amount)) + " " + (s.currency || "TRY") : "—") +
       "</td><td>" +
       escapeHtml(s.note || "") +
-      "</td></tr>"
+      "</td><td class=\"yatirim-cell-action\"><button type=\"button\" class=\"btn btn--ghost btn--small\" data-yatirim-edit=\"" +
+      escapeHtml(s.id) +
+      '">Düzenle</button></td></tr>'
     );
   }
 
@@ -2756,6 +2770,129 @@
     state = loadState();
     renderYatirimDashboard();
     renderYatirimTable();
+  }
+
+  function findInvestmentSessionById(id) {
+    state = loadState();
+    var i;
+    for (i = 0; i < state.sessions.length; i++) {
+      var s = state.sessions[i];
+      if (s.id === id && s.category === "investment") return s;
+    }
+    return null;
+  }
+
+  function openYatirimEditDialog(sessionId) {
+    var s = findInvestmentSessionById(sessionId);
+    if (!s) {
+      alert("Kayıt bulunamadı.");
+      return;
+    }
+    var parts = investIsoToDateTimeParts(s.transactionAt || s.createdAt);
+    var ov = document.getElementById("yatirim-edit-overlay");
+    var hid = document.getElementById("yatirim-edit-session-id");
+    if (hid) hid.value = s.id;
+    var asset = document.getElementById("yatirim-edit-asset");
+    if (asset) asset.value = s.assetName || "";
+    var amt = document.getElementById("yatirim-edit-amount");
+    if (amt) amt.value = s.amount != null && !isNaN(s.amount) ? String(s.amount) : "";
+    var pr = document.getElementById("yatirim-edit-share-price");
+    if (pr) pr.value = s.sharePrice != null && !isNaN(s.sharePrice) ? String(s.sharePrice) : "";
+    var act = document.getElementById("yatirim-edit-action");
+    if (act) act.value = s.investAction || "arastirma";
+    var dEl = document.getElementById("yatirim-edit-date");
+    if (dEl) dEl.value = parts.date;
+    var tEl = document.getElementById("yatirim-edit-time");
+    if (tEl) tEl.value = parts.time;
+    var nEl = document.getElementById("yatirim-edit-note");
+    if (nEl) nEl.value = s.note || "";
+    if (ov) {
+      ov.hidden = false;
+      document.body.style.overflow = "hidden";
+    }
+    if (asset) asset.focus();
+  }
+
+  function closeYatirimEditDialog() {
+    var ov = document.getElementById("yatirim-edit-overlay");
+    if (ov) ov.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  function applyYatirimEditFromForm() {
+    var hid = document.getElementById("yatirim-edit-session-id");
+    var id = hid && hid.value ? hid.value : "";
+    if (!id) return false;
+    var s = findInvestmentSessionById(id);
+    if (!s) {
+      alert("Kayıt bulunamadı.");
+      return false;
+    }
+    var dIn = document.getElementById("yatirim-edit-date");
+    var tIn = document.getElementById("yatirim-edit-time");
+    var txIso = investDateTimeFromInputs(dIn, tIn);
+    if (!txIso) {
+      alert("İşlem tarihi seç.");
+      return false;
+    }
+    var asset = document.getElementById("yatirim-edit-asset");
+    s.transactionAt = txIso;
+    s.assetName = asset && asset.value.trim() ? asset.value.trim() : "Kayıt";
+    var aEl = document.getElementById("yatirim-edit-amount");
+    var amt = aEl && aEl.value ? parseFloat(aEl.value) : NaN;
+    s.amount = isNaN(amt) ? null : amt;
+    var p = document.getElementById("yatirim-edit-share-price");
+    var priceRaw = p && p.value ? String(p.value).trim().replace(",", ".") : "";
+    var sp = priceRaw === "" ? null : parseFloat(priceRaw);
+    s.sharePrice = sp != null && !isNaN(sp) ? sp : null;
+    var actEl = document.getElementById("yatirim-edit-action");
+    s.investAction = actEl && actEl.value ? actEl.value : "arastirma";
+    s.currency = s.currency || "TRY";
+    var noteEl = document.getElementById("yatirim-edit-note");
+    s.note = noteEl && noteEl.value != null ? String(noteEl.value).trim() : "";
+    saveState(state);
+    renderStats();
+    renderList();
+    refreshBookInvestPages();
+    return true;
+  }
+
+  function initYatirimEditUI() {
+    var wrap = document.getElementById("yatirim-records-wrap");
+    if (wrap && !wrap.dataset.yatirimEditClicks) {
+      wrap.dataset.yatirimEditClicks = "1";
+      wrap.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-yatirim-edit]");
+        if (!b) return;
+        var sid = b.getAttribute("data-yatirim-edit");
+        if (sid) openYatirimEditDialog(sid);
+      });
+    }
+    var ov = document.getElementById("yatirim-edit-overlay");
+    if (ov && !ov.dataset.yatirimEditBound) {
+      ov.dataset.yatirimEditBound = "1";
+      ov.addEventListener("click", function (e) {
+        if (e.target === ov) closeYatirimEditDialog();
+      });
+    }
+    var form = document.getElementById("yatirim-edit-form");
+    if (form && !form.dataset.yatirimEditBound) {
+      form.dataset.yatirimEditBound = "1";
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (applyYatirimEditFromForm()) closeYatirimEditDialog();
+      });
+    }
+    var cancel = document.getElementById("yatirim-edit-cancel");
+    if (cancel && !cancel.dataset.yatirimEditBound) {
+      cancel.dataset.yatirimEditBound = "1";
+      cancel.addEventListener("click", closeYatirimEditDialog);
+    }
+    var closeBtn = document.getElementById("yatirim-edit-close");
+    if (closeBtn && !closeBtn.dataset.yatirimEditBound) {
+      closeBtn.dataset.yatirimEditBound = "1";
+      closeBtn.addEventListener("click", closeYatirimEditDialog);
+    }
   }
 
   function refreshBookInvestPages() {
@@ -4149,19 +4286,49 @@
     var sorted = cat.notes.slice().sort(function (a, b) {
       return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
     });
+    var editNoteId = sessionStorage.getItem("notlarimEditNote") || "";
+    if (editNoteId) {
+      var foundEdit = false;
+      for (ci = 0; ci < sorted.length; ci++) {
+        if (sorted[ci].id === editNoteId) {
+          foundEdit = true;
+          break;
+        }
+      }
+      if (!foundEdit) {
+        sessionStorage.removeItem("notlarimEditNote");
+        editNoteId = "";
+      }
+    }
     for (ci = 0; ci < sorted.length; ci++) {
       var n = sorted[ci];
-      notesHtml.push(
-        '<article class="notlarim-note" data-note-id="' +
-          escapeHtml(n.id) +
-          '"><div class="notlarim-note__body">' +
-          escapeHtml(n.body) +
-          '</div><div class="notlarim-note__foot"><button type="button" class="btn btn--ghost btn--small" data-notes-delete-note="' +
-          escapeHtml(n.id) +
-          '" data-notes-cat-id="' +
-          escapeHtml(cat.id) +
-          '">Sil</button></div></article>'
-      );
+      if (editNoteId && n.id === editNoteId) {
+        notesHtml.push(
+          '<article class="notlarim-note notlarim-note--editing" data-note-id="' +
+            escapeHtml(n.id) +
+            '"><label for="notes-edit-body-field" class="sr-only">Notu düzenle</label>' +
+            '<textarea id="notes-edit-body-field" class="notlarim-textarea notlarim-textarea--edit" rows="6" placeholder="Not metni…"></textarea>' +
+            '<div class="notlarim-note__foot notlarim-note__actions"><button type="button" class="btn btn--primary btn--small" data-notes-save-edit="' +
+            escapeHtml(n.id) +
+            '" data-notes-cat-id="' +
+            escapeHtml(cat.id) +
+            '">Kaydet</button><button type="button" class="btn btn--ghost btn--small" data-notes-cancel-edit>Kaydı kapat</button></div></article>'
+        );
+      } else {
+        notesHtml.push(
+          '<article class="notlarim-note" data-note-id="' +
+            escapeHtml(n.id) +
+            '"><div class="notlarim-note__body">' +
+            escapeHtml(n.body) +
+            '</div><div class="notlarim-note__foot notlarim-note__actions"><button type="button" class="btn btn--ghost btn--small" data-notes-start-edit="' +
+            escapeHtml(n.id) +
+            '">Düzenle</button><button type="button" class="btn btn--ghost btn--small" data-notes-delete-note="' +
+            escapeHtml(n.id) +
+            '" data-notes-cat-id="' +
+            escapeHtml(cat.id) +
+            '">Sil</button></div></article>'
+        );
+      }
     }
 
     mainEl.innerHTML =
@@ -4184,6 +4351,24 @@
       '<div class="notlarim-notes-list">' +
       (notesHtml.length ? notesHtml.join("") : '<p class="notlarim-notes-empty">Bu kategoride henüz not yok.</p>') +
       "</div>";
+    if (editNoteId) {
+      var edTa = document.getElementById("notes-edit-body-field");
+      if (edTa) {
+        var b = "";
+        for (ci = 0; ci < sorted.length; ci++) {
+          if (sorted[ci].id === editNoteId) {
+            b = sorted[ci].body != null ? String(sorted[ci].body) : "";
+            break;
+          }
+        }
+        edTa.value = b;
+        setTimeout(function () {
+          edTa.focus();
+          var len = edTa.value.length;
+          edTa.setSelectionRange(len, len);
+        }, 0);
+      }
+    }
   }
 
   function initNotlarimPage() {
@@ -4216,9 +4401,53 @@
       if (sel) {
         var sid = sel.getAttribute("data-notes-select");
         if (sid) {
+          if (sessionStorage.getItem("notlarimCatId") !== sid) {
+            sessionStorage.removeItem("notlarimEditNote");
+          }
           sessionStorage.setItem("notlarimCatId", sid);
           renderNotlarimPage();
         }
+        return;
+      }
+      var stEdit = e.target.closest("[data-notes-start-edit]");
+      if (stEdit) {
+        var sidEdit = stEdit.getAttribute("data-notes-start-edit");
+        if (sidEdit) {
+          sessionStorage.setItem("notlarimEditNote", sidEdit);
+          renderNotlarimPage();
+        }
+        return;
+      }
+      var canEdit = e.target.closest("[data-notes-cancel-edit]");
+      if (canEdit) {
+        sessionStorage.removeItem("notlarimEditNote");
+        renderNotlarimPage();
+        return;
+      }
+      var savEdit = e.target.closest("[data-notes-save-edit]");
+      if (savEdit) {
+        var nSave = savEdit.getAttribute("data-notes-save-edit");
+        var cSave = savEdit.getAttribute("data-notes-cat-id");
+        var taE = document.getElementById("notes-edit-body-field");
+        var newBody = taE ? String(taE.value || "").trim() : "";
+        if (!newBody) {
+          alert("Not metni boş olamaz.");
+          return;
+        }
+        state = loadState();
+        var c4 = cSave && findNoteCategoryById(state, cSave);
+        if (!c4 || !nSave) return;
+        var ni;
+        for (ni = 0; ni < c4.notes.length; ni++) {
+          if (c4.notes[ni].id === nSave) {
+            c4.notes[ni].body = newBody;
+            c4.notes[ni].updatedAt = new Date().toISOString();
+            break;
+          }
+        }
+        sessionStorage.removeItem("notlarimEditNote");
+        saveState(state);
+        renderNotlarimPage();
         return;
       }
       var ren = e.target.closest("[data-notes-rename-cat]");
@@ -4264,6 +4493,9 @@
         c2.notes = c2.notes.filter(function (nn) {
           return nn.id !== noteId;
         });
+        if (sessionStorage.getItem("notlarimEditNote") === noteId) {
+          sessionStorage.removeItem("notlarimEditNote");
+        }
         saveState(state);
         renderNotlarimPage();
         return;
@@ -4953,6 +5185,7 @@
         renderYatirimTable();
       });
     }
+    initYatirimEditUI();
     renderYatirimPage();
   } else if (page === "yds") {
     bindExportClick();
