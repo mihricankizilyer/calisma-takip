@@ -1492,6 +1492,8 @@
       btnUseTimer: q("btn-use-timer"),
       form: q("form-session"),
       category: q("category"),
+      recordDate: q("record-date"),
+      recordTime: q("record-time"),
       wrapEnDetail: q("wrap-en-detail"),
       wrapTechTopic: q("wrap-tech-topic"),
       wrapBook: q("wrap-book"),
@@ -4694,13 +4696,22 @@
         }
       }
 
+      var backIso = null;
+      if (el.recordDate && el.recordDate.value && String(el.recordDate.value).trim()) {
+        backIso = investDateTimeFromInputs(el.recordDate, el.recordTime);
+        if (!backIso) {
+          alert("Geçerli bir kayıt tarihi seçin (veya alanı boş bırakın).");
+          return;
+        }
+      }
+
       var session = {
         id: uid(),
         category: cat,
         durationMinutes: cat === "investment" ? 0 : duration,
         note: el.note.value.trim(),
         tags: parseTags(el.tags.value),
-        createdAt: new Date().toISOString(),
+        createdAt: backIso || new Date().toISOString(),
       };
 
       if (cat === "english") {
@@ -4774,10 +4785,15 @@
           }
         }
       } else if (cat === "investment") {
-        var txIso = investDateTimeFromInputs(el.investDate, el.investTime);
-        if (!txIso) {
-          alert("İşlem tarihi seç.");
-          return;
+        var txIso;
+        if (backIso) {
+          txIso = backIso;
+        } else {
+          txIso = investDateTimeFromInputs(el.investDate, el.investTime);
+          if (!txIso) {
+            alert("İşlem tarihi seçin veya üstteki geçmiş kayıt tarihini kullanın.");
+            return;
+          }
         }
         session.transactionAt = txIso;
         session.assetName = el.investAsset.value.trim() || "Kayıt";
@@ -4806,6 +4822,8 @@
       if (el.investAsset) el.investAsset.value = "";
       if (el.investAmount) el.investAmount.value = "";
       if (el.investSharePrice) el.investSharePrice.value = "";
+      if (el.recordDate) el.recordDate.value = "";
+      if (el.recordTime) el.recordTime.value = "";
       setInvestDateDefaults();
     });
 

@@ -74,6 +74,19 @@
                 <option value="investment">Yatırım</option>
               </select>
             </div>
+            <div class="form-block form-block--record-when" id="wrap-record-when" aria-label="Geçmişe dönük kayıt">
+              <p class="form-block__lead">Geçmişe dönük kayıt: aşağıdaki tarih/saati doldurun. Boş bırakırsanız kayıt, eklediğiniz anın tarihiyle kaydedilir.</p>
+              <div class="form__row form__row--inline-when">
+                <div class="form__row form__row--half">
+                  <label for="record-date">Kayıt tarihi (isteğe bağlı)</label>
+                  <input type="date" id="record-date" autocomplete="off" />
+                </div>
+                <div class="form__row form__row--half">
+                  <label for="record-time">Saat (isteğe bağlı, boşsa 12:00)</label>
+                  <input type="time" id="record-time" step="60" />
+                </div>
+              </div>
+            </div>
             <div class="form-block form-block--hidden" id="wrap-en-detail">
               <p class="form-block__lead">Önce YDS çalışma türünü seç; sadece o alanlar görünür.</p>
               <div class="form__row">

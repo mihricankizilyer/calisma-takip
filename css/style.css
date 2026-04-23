@@ -929,6 +929,28 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.form-block--record-when .form-block__lead {
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.form__row--inline-when {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+  align-items: end;
+}
+
+@media (max-width: 560px) {
+  .form__row--inline-when {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form__row--inline-when .form__row--half {
+  margin-bottom: 0;
+}
+
 .form-en-dy-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
