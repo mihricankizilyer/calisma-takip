@@ -660,6 +660,63 @@ body {
   color: #991b1b;
 }
 
+.session-item__actions .session-item__date-edit {
+  color: #2563eb;
+  margin-right: 0.65rem;
+  text-decoration: underline;
+}
+
+.session-item__actions .session-item__date-edit:hover {
+  color: #1d4ed8;
+}
+
+.gecmis-date-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.gecmis-date-dialog {
+  width: 100%;
+  max-width: 24rem;
+  max-height: min(90vh, 36rem);
+  overflow: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.gecmis-date-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.gecmis-date-dialog__head .panel__h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.gecmis-date-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.gecmis-date-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
 .empty {
   display: none;
   text-align: center;

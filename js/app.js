@@ -1846,6 +1846,17 @@
     return y + "-" + m + "-" + day;
   }
 
+  function isoToTimeInputValue(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    var h = String(d.getHours());
+    if (h.length < 2) h = "0" + h;
+    var mi = String(d.getMinutes());
+    if (mi.length < 2) mi = "0" + mi;
+    return h + ":" + mi;
+  }
+
   function dateInputToIsoLocal(dateStr) {
     if (!dateStr || !String(dateStr).trim()) return null;
     var p = String(dateStr).split("-");
@@ -2040,6 +2051,17 @@
 
       var actions = document.createElement("div");
       actions.className = "session-item__actions";
+      if (cat === "english") {
+        var editDate = document.createElement("button");
+        editDate.type = "button";
+        editDate.className = "session-item__date-edit";
+        editDate.textContent = "Tarih";
+        editDate.setAttribute("aria-label", "YDS kayıt tarihini değiştir");
+        editDate.addEventListener("click", function () {
+          openGecmisDateEditDialog(s.id);
+        });
+        actions.appendChild(editDate);
+      }
       var del = document.createElement("button");
       del.type = "button";
       del.textContent = "Sil";
@@ -4288,6 +4310,106 @@
     });
   }
 
+  function openGecmisDateEditDialog(sessionId) {
+    var s0 = null;
+    state = loadState();
+    var j;
+    for (j = 0; j < state.sessions.length; j++) {
+      if (state.sessions[j].id === sessionId) {
+        s0 = state.sessions[j];
+        break;
+      }
+    }
+    if (!s0) {
+      alert("Kayıt bulunamadı.");
+      return;
+    }
+    var eff = sessionEffectiveTime(s0) || s0.createdAt;
+    var dIn = document.getElementById("gecmis-date-input");
+    var tIn = document.getElementById("gecmis-time-input");
+    var hid = document.getElementById("gecmis-date-session-id");
+    var hint = document.getElementById("gecmis-date-cat-hint");
+    if (hid) hid.value = s0.id;
+    if (dIn) dIn.value = isoToDateInputValue(eff);
+    if (tIn) tIn.value = isoToTimeInputValue(eff);
+    if (hint) {
+      var cat0 = String(s0.category || "").trim();
+      hint.textContent =
+        cat0 === "investment"
+          ? "Yatırım kaydında gösterilen işlem zamanı güncellenir."
+          : "Bu kayıt listelerde ve grafiklerde bu tarih/saatle görünür.";
+    }
+    var ov = document.getElementById("gecmis-date-overlay");
+    if (ov) {
+      ov.hidden = false;
+      document.body.style.overflow = "hidden";
+    }
+    if (dIn) dIn.focus();
+  }
+
+  function closeGecmisDateEditDialog() {
+    var ovv = document.getElementById("gecmis-date-overlay");
+    if (ovv) ovv.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  function applyGecmisSessionDateFromForm() {
+    var hid0 = document.getElementById("gecmis-date-session-id");
+    var id0 = hid0 && hid0.value ? hid0.value : "";
+    if (!id0) return false;
+    state = loadState();
+    var s = null;
+    var i;
+    for (i = 0; i < state.sessions.length; i++) {
+      if (state.sessions[i].id === id0) {
+        s = state.sessions[i];
+        break;
+      }
+    }
+    if (!s) {
+      alert("Kayıt bulunamadı.");
+      return false;
+    }
+    if (String(s.category || "").trim() !== "english") {
+      alert("Sadece YDS kayıtlarının tarihi değiştirilebilir.");
+      return false;
+    }
+    var dIn2 = document.getElementById("gecmis-date-input");
+    var tIn2 = document.getElementById("gecmis-time-input");
+    var iso = investDateTimeFromInputs(dIn2, tIn2);
+    if (!iso) {
+      alert("Tarih seçin.");
+      return false;
+    }
+    s.createdAt = iso;
+    saveState(state);
+    renderStats();
+    renderList();
+    renderDashboardCharts();
+    refreshBookInvestPages();
+    return true;
+  }
+
+  function initGecmisDateEditDialog() {
+    var ov = document.getElementById("gecmis-date-overlay");
+    if (!ov || ov.dataset.gecmisDateBound) return;
+    ov.dataset.gecmisDateBound = "1";
+    ov.addEventListener("click", function (e) {
+      if (e.target === ov) closeGecmisDateEditDialog();
+    });
+    var form = document.getElementById("gecmis-date-form");
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (applyGecmisSessionDateFromForm()) closeGecmisDateEditDialog();
+      });
+    }
+    var c = document.getElementById("gecmis-date-cancel");
+    if (c) c.addEventListener("click", closeGecmisDateEditDialog);
+    var cl = document.getElementById("gecmis-date-close");
+    if (cl) cl.addEventListener("click", closeGecmisDateEditDialog);
+  }
+
   function deleteSession(id) {
     state.sessions = state.sessions.filter(function (s) {
       return s.id !== id;
@@ -4820,6 +4942,7 @@
     el.filterCategory.addEventListener("change", renderList);
     bindExportClick();
     attachStandardImport();
+    initGecmisDateEditDialog();
     renderList();
     renderDashboardCharts();
   } else if (page === "kitaplar") {
