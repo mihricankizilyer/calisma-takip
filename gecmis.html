@@ -103,31 +103,6 @@
           <p class="empty empty--gecmis" id="empty-msg">Kayıt yok. <a href="yeni-kayit.html">Ekle</a></p>
         </section>
 
-        <div id="gecmis-date-overlay" class="gecmis-date-overlay" hidden>
-          <div class="gecmis-date-dialog panel" role="dialog" aria-modal="true" aria-labelledby="gecmis-date-title">
-            <div class="gecmis-date-dialog__head">
-              <h3 id="gecmis-date-title" class="panel__h2">Yapılma tarihi / saati</h3>
-              <button type="button" class="btn btn--ghost btn--small" id="gecmis-date-close" aria-label="Kapat">Kapat</button>
-            </div>
-            <form id="gecmis-date-form" class="form">
-              <input type="hidden" id="gecmis-date-session-id" value="" />
-              <p class="gecmis-date-hint" id="gecmis-date-cat-hint"></p>
-              <div class="form__row">
-                <label for="gecmis-date-input">Tarih</label>
-                <input type="date" id="gecmis-date-input" required />
-              </div>
-              <div class="form__row">
-                <label for="gecmis-time-input">Saat (isteğe bağlı, boşsa 12:00 sayılır)</label>
-                <input type="time" id="gecmis-time-input" step="60" />
-              </div>
-              <div class="gecmis-date-dialog__actions">
-                <button type="submit" class="btn btn--primary">Kaydet</button>
-                <button type="button" class="btn btn--ghost" id="gecmis-date-cancel">Vazgeç</button>
-              </div>
-            </form>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
