@@ -1667,6 +1667,18 @@
     return { en: en, tech: tech, book: book, inv: inv, total: en + tech + book + inv };
   }
 
+  /** Bu hafta (takvim haftası) yatırım: net imzalı tutar toplamı ve hacim (mutlak). */
+  function weeklyInvestmentTlStats() {
+    var net = 0;
+    var vol = 0;
+    state.sessions.forEach(function (s) {
+      if (s.category !== "investment" || !isInCurrentWeek(sessionEffectiveTime(s))) return;
+      net += investmentSignedAmount(s);
+      vol += investmentVolumeAmount(s);
+    });
+    return { net: net, vol: vol };
+  }
+
   /** Geçmiş grafikleri: yatırımın süresi yok; işlem başına 1 birim (görünürlük için). */
   function sessionChartWeight(s) {
     if (!s) return 0;
@@ -1776,13 +1788,14 @@
       el.statWeekEn.textContent = formatMinutesForDisplay(w.en) + su;
       el.statWeekTech.textContent = formatMinutesForDisplay(w.tech) + su;
       if (el.statWeekBook) el.statWeekBook.textContent = formatMinutesForDisplay(w.book) + su;
-      if (el.statWeekInv) el.statWeekInv.textContent = formatMinutesForDisplay(w.inv) + su;
+      var invTl = weeklyInvestmentTlStats();
+      if (el.statWeekInv) el.statWeekInv.textContent = formatMoneyTR(invTl.net);
 
-      var maxBar = Math.max(w.en, w.tech, w.book, w.inv, 1);
+      var maxBar = Math.max(w.en, w.tech, w.book, invTl.vol, 1);
       el.barEn.style.width = Math.round((w.en / maxBar) * 100) + "%";
       el.barTech.style.width = Math.round((w.tech / maxBar) * 100) + "%";
       if (el.barBook) el.barBook.style.width = Math.round((w.book / maxBar) * 100) + "%";
-      if (el.barInv) el.barInv.style.width = Math.round((w.inv / maxBar) * 100) + "%";
+      if (el.barInv) el.barInv.style.width = Math.round((invTl.vol / maxBar) * 100) + "%";
 
       renderStreak();
     }
