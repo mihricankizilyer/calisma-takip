@@ -1623,7 +1623,10 @@
       el.wrapBook.classList.remove("form-block--hidden");
       syncBookNewFields();
       populateBookDateInputs();
-    } else if (cat === "investment" && el.wrapInvest) el.wrapInvest.classList.remove("form-block--hidden");
+    } else if (cat === "investment" && el.wrapInvest) {
+      el.wrapInvest.classList.remove("form-block--hidden");
+      populateInvestAssetSuggestions();
+    }
     if (el.wrapDuration) {
       if (cat === "investment" || cat === "english") el.wrapDuration.classList.add("form__row--hidden");
       else el.wrapDuration.classList.remove("form__row--hidden");
@@ -1638,6 +1641,35 @@
       el.wrapBookNewOnly.classList.remove("book-new-only--hidden");
     } else {
       el.wrapBookNewOnly.classList.add("book-new-only--hidden");
+    }
+  }
+
+  /** Yeni kayıt: yatırım varlık alanı için önceki kayıtlardan öneriler (datalist). */
+  function populateInvestAssetSuggestions() {
+    var dl = document.getElementById("invest-asset-suggestions");
+    if (!dl) return;
+    state = loadState();
+    var seen = {};
+    state.sessions.forEach(function (s) {
+      if (s.category !== "investment") return;
+      var raw = s.assetName && String(s.assetName).trim();
+      if (!raw) return;
+      if (raw.toLocaleLowerCase("tr") === "kayıt") return;
+      var k = raw.toLocaleLowerCase("tr");
+      if (!(k in seen)) seen[k] = raw;
+    });
+    dl.innerHTML = "";
+    var names = Object.keys(seen).map(function (k) {
+      return seen[k];
+    });
+    names.sort(function (a, b) {
+      return a.localeCompare(b, "tr");
+    });
+    var i;
+    for (i = 0; i < names.length; i++) {
+      var opt = document.createElement("option");
+      opt.value = names[i];
+      dl.appendChild(opt);
     }
   }
 
@@ -4838,6 +4870,7 @@
       if (el.recordDate) el.recordDate.value = "";
       if (el.recordTime) el.recordTime.value = "";
       setInvestDateDefaults();
+      if (cat === "investment") populateInvestAssetSuggestions();
     });
 
     bindExportClick();

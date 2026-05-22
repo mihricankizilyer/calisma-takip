@@ -259,7 +259,8 @@
             <div class="form-block form-block--hidden" id="wrap-invest">
               <div class="form__row">
                 <label for="invest-asset">Varlık / konu</label>
-                <input type="text" id="invest-asset" placeholder="Örn. BIST fon, altın, hisse" autocomplete="off" />
+                <input type="text" id="invest-asset" list="invest-asset-suggestions" placeholder="Öncekilerden seçin veya yeni yazın" autocomplete="off" />
+                <datalist id="invest-asset-suggestions"></datalist>
               </div>
               <div class="form__row">
                 <label for="invest-amount">Tutar (₺, isteğe bağlı)</label>
