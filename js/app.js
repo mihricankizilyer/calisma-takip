@@ -3989,22 +3989,22 @@
     banner.hidden = false;
     if (diff < 0) {
       banner.classList.add("yds-basvuru-alert--past");
-      banner.textContent = "Başvuru tarihi geçmiş.";
+      banner.textContent = "Başvuru son tarihi geçmiş.";
     } else if (diff === 0) {
       banner.classList.add("yds-basvuru-alert--critical");
-      banner.textContent = "Bugün son gün olabilir.";
+      banner.textContent = "Başvuru son günü bugün.";
     } else if (diff <= 3) {
       banner.classList.add("yds-basvuru-alert--critical");
-      banner.textContent = diff + " gün kaldı.";
+      banner.textContent = "Başvuruya " + diff + " gün kaldı.";
     } else if (diff <= 7) {
       banner.classList.add("yds-basvuru-alert--soon");
-      banner.textContent = diff + " gün kaldı.";
+      banner.textContent = "Başvuruya " + diff + " gün kaldı.";
     } else if (diff <= 14) {
       banner.classList.add("yds-basvuru-alert--warn");
-      banner.textContent = diff + " gün kaldı.";
+      banner.textContent = "Başvuruya " + diff + " gün kaldı.";
     } else {
       banner.classList.add("yds-basvuru-alert--info");
-      banner.textContent = diff + " gün var.";
+      banner.textContent = "Başvuruya " + diff + " gün var.";
     }
   }
 
@@ -4101,9 +4101,9 @@
         today.setHours(0, 0, 0, 0);
         exam.setHours(0, 0, 0, 0);
         var diff = Math.round((exam - today) / (24 * 60 * 60 * 1000));
-        if (diff > 0) daysEl.textContent = "Sınava " + diff + " gün.";
-        else if (diff === 0) daysEl.textContent = "Sınav günü.";
-        else daysEl.textContent = "Tarih geçmiş.";
+        if (diff > 0) daysEl.textContent = "Sınava kalan: " + diff + " gün";
+        else if (diff === 0) daysEl.textContent = "Sınav günü bugün.";
+        else daysEl.textContent = "Sınav tarihi geçmiş.";
       } else {
         daysEl.textContent = "Sınav tarihi yok.";
       }

@@ -2739,8 +2739,18 @@ body {
 
 .yds-streak-big {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.35rem;
+  gap: 0.15rem 0.35rem;
+}
+
+.yds-streak-big__label {
+  flex: 0 0 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
 }
 
 .yds-streak-big__n {
