@@ -2258,47 +2258,6 @@
     );
   }
 
-  function renderTeknikSessionItemHtml(s) {
-    var when = formatBookTimelineWhen(sessionEffectiveTime(s));
-    var topicTxt = s.techTopic && String(s.techTopic).trim() ? String(s.techTopic).trim() : "";
-    var metaBits = [];
-    if (topicTxt) metaBits.push(topicTxt);
-    if (s.tags && s.tags.length) metaBits.push(s.tags.join(", "));
-    return (
-      '<li class="session-item session-item--card session-item--tech" data-id="' +
-      escapeHtml(s.id) +
-      '">' +
-      '<div class="session-item__rail" aria-hidden="true"><span class="session-item__dot"></span></div>' +
-      '<article class="session-item__card">' +
-      '<div class="session-item__head">' +
-      '<time class="session-item__when" datetime="' +
-      escapeHtml(String(sessionEffectiveTime(s) || "")) +
-      '">' +
-      '<span class="session-item__date">' +
-      escapeHtml(when.date) +
-      "</span>" +
-      (when.time ? '<span class="session-item__time">' + escapeHtml(when.time) + "</span>" : "") +
-      "</time>" +
-      '<span class="session-item__badge session-item__badge--tech">Teknik</span>' +
-      "</div>" +
-      '<div class="session-item__stats">' +
-      '<span class="session-item__chip session-item__chip--duration">' +
-      formatMinutesForDisplay(s.durationMinutes || 0) +
-      " dk</span>" +
-      "</div>" +
-      (metaBits.length
-        ? '<div class="session-item__meta">' + escapeHtml(metaBits.join(" · ")) + "</div>"
-        : "") +
-      (s.note ? '<p class="session-item__note">' + escapeHtml(String(s.note)) + "</p>" : "") +
-      '<div class="session-item__actions">' +
-      '<button type="button" class="session-item__del" data-teknik-delete="' +
-      escapeHtml(s.id) +
-      '">Sil</button>' +
-      "</div>" +
-      "</article></li>"
-    );
-  }
-
   function renderList() {
     if (!el.sessionList) return;
     state = loadState();
@@ -3460,33 +3419,6 @@
       }
     }
 
-    var listEl = document.getElementById("teknik-session-list");
-    var countEl = document.getElementById("teknik-records-count");
-    var emptyEl = document.getElementById("teknik-session-empty");
-    if (listEl) {
-      var rows = [];
-      state.sessions.forEach(function (s) {
-        if (String(s.category || "").trim() !== "technical") return;
-        var iso = sessionEffectiveTime(s);
-        var tt = iso ? new Date(iso).getTime() : 0;
-        rows.push({ s: s, t: tt });
-      });
-      rows.sort(function (a, b) {
-        return b.t - a.t;
-      });
-      var limit = 40;
-      var shown = rows.slice(0, limit);
-      if (countEl) countEl.textContent = String(shown.length);
-      if (shown.length === 0) {
-        listEl.innerHTML = "";
-        if (emptyEl) emptyEl.hidden = false;
-        return;
-      }
-      if (emptyEl) emptyEl.hidden = true;
-      listEl.innerHTML = shown.map(function (row) {
-        return renderTeknikSessionItemHtml(row.s);
-      }).join("");
-    }
   }
 
   function rollupAddScore(aggRow, s) {
@@ -4651,14 +4583,17 @@
     for (ci = 0; ci < state.noteCategories.length; ci++) {
       var c = state.noteCategories[ci];
       var active = c.id === selId ? " notlarim-cat-btn--active" : "";
+      var noteCount = c.notes && c.notes.length ? c.notes.length : 0;
       parts.push(
         '<li class="notlarim-cat-item"><button type="button" class="notlarim-cat-btn' +
           active +
           '" data-notes-select="' +
           escapeHtml(c.id) +
-          '">' +
+          '"><span class="notlarim-cat-btn__name">' +
           escapeHtml(c.title) +
-          "</button></li>"
+          '</span><span class="notlarim-cat-btn__count">' +
+          noteCount +
+          "</span></button></li>"
       );
     }
     listEl.innerHTML = parts.length
@@ -4678,24 +4613,38 @@
     });
     for (ci = 0; ci < sorted.length; ci++) {
       var n = sorted[ci];
+      var dateLabel = n.createdAt ? formatDateOnly(n.createdAt) : "";
       notesHtml.push(
         '<article class="notlarim-note" data-note-id="' +
           escapeHtml(n.id) +
           '"><div class="notlarim-note__body">' +
           escapeHtml(n.body) +
-          '</div><div class="notlarim-note__foot"><button type="button" class="btn btn--ghost btn--small" data-notes-delete-note="' +
+          "</div>" +
+          '<div class="notlarim-note__foot">' +
+          (dateLabel
+            ? '<span class="notlarim-note__date">' + escapeHtml(dateLabel) + "</span>"
+            : "<span></span>") +
+          '<button type="button" class="notlarim-note__del" data-notes-delete-note="' +
           escapeHtml(n.id) +
           '" data-notes-cat-id="' +
           escapeHtml(cat.id) +
-          '">Sil</button></div></article>'
+          '" aria-label="Notu sil" title="Notu sil">Sil</button>' +
+          "</div></article>"
       );
     }
 
+    var noteCount = cat.notes ? cat.notes.length : 0;
     mainEl.innerHTML =
       '<div class="notlarim-cat-toolbar">' +
+      '<div class="notlarim-cat-toolbar__head">' +
       '<h2 class="notlarim-cat-title">' +
       escapeHtml(cat.title) +
-      '</h2><div class="notlarim-cat-actions">' +
+      "</h2>" +
+      '<span class="notlarim-cat-meta">' +
+      noteCount +
+      (noteCount === 1 ? " not" : " not") +
+      "</span></div>" +
+      '<div class="notlarim-cat-actions">' +
       '<button type="button" class="btn btn--ghost btn--small" data-notes-rename-cat="' +
       escapeHtml(cat.id) +
       '">Adı değiştir</button>' +
@@ -4704,12 +4653,15 @@
       '">Kategoriyi sil</button>' +
       "</div></div>" +
       '<div class="notlarim-compose"><label for="notes-draft-body" class="sr-only">Yeni not</label>' +
-      '<textarea id="notes-draft-body" class="notlarim-textarea" rows="4" placeholder="Not yazın…"></textarea>' +
-      '<button type="button" class="btn btn--primary" data-notes-add-note="' +
+      '<textarea id="notes-draft-body" class="notlarim-textarea" rows="4" placeholder="Bu kategoriye bir not yazın…"></textarea>' +
+      '<div class="notlarim-compose__foot">' +
+      '<button type="button" class="btn btn--primary btn--small" data-notes-add-note="' +
       escapeHtml(cat.id) +
-      '">Not ekle</button></div>' +
+      '">Not ekle</button></div></div>' +
       '<div class="notlarim-notes-list">' +
-      (notesHtml.length ? notesHtml.join("") : '<p class="notlarim-notes-empty">Bu kategoride henüz not yok.</p>') +
+      (notesHtml.length
+        ? notesHtml.join("")
+        : '<p class="notlarim-notes-empty">Bu kategoride henüz not yok. Yukarıdan ilk notunuzu ekleyin.</p>') +
       "</div>";
   }
 
@@ -5527,18 +5479,6 @@
   } else if (page === "teknik") {
     bindExportClick();
     attachStandardImport();
-    var tdDash = document.getElementById("teknik-dashboard");
-    if (tdDash && !tdDash.dataset.teknikBound) {
-      tdDash.dataset.teknikBound = "1";
-      tdDash.addEventListener("click", function (e) {
-        var delBtn = e.target.closest("[data-teknik-delete]");
-        if (!delBtn) return;
-        var sid = delBtn.getAttribute("data-teknik-delete");
-        if (!sid || !confirm("Bu teknik kaydını silmek istiyor musunuz?")) return;
-        deleteSession(sid);
-      });
-    }
-    bindRecordsCollapsible(document.getElementById("teknik-records-panel"), "teknikRecordsOpen");
     renderTeknikPage();
   } else if (page === "notlarim") {
     bindExportClick();
