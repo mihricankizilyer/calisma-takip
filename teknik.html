@@ -56,9 +56,30 @@
             <h2 id="teknik-hero-title" class="panel__h2">Bu hafta</h2>
             <p class="panel__sub">Teknik kategorisindeki oturumlar</p>
           </div>
-          <div class="teknik-hero-stat">
-            <span class="teknik-hero-stat__label">Toplam süre</span>
-            <strong class="teknik-hero-stat__val"><span id="teknik-stat-week">0</span> dk</strong>
+          <div class="teknik-hero-stats">
+            <div class="teknik-hero-stat">
+              <span class="teknik-hero-stat__label">Oturum sayısı</span>
+              <strong class="teknik-hero-stat__val"><span id="teknik-stat-week-sessions">0</span></strong>
+            </div>
+            <div class="teknik-hero-stat">
+              <span class="teknik-hero-stat__label">Toplam süre</span>
+              <strong class="teknik-hero-stat__val"><span id="teknik-stat-week">0</span> dk</strong>
+            </div>
+            <div class="teknik-hero-stat">
+              <span class="teknik-hero-stat__label">Aktif gün</span>
+              <strong class="teknik-hero-stat__val"><span id="teknik-stat-week-days">0</span> gün</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel--teknik-chart" aria-labelledby="teknik-count-title">
+          <div class="panel__head-row">
+            <h2 id="teknik-count-title" class="panel__h2">Oturum sıklığı</h2>
+            <p class="panel__sub">Son 14 gün — günde kaç teknik oturum (alışkanlık takibi)</p>
+          </div>
+          <p class="chart-empty teknik-chart-empty" id="teknik-chart-count-empty" hidden>Kayıt yok.</p>
+          <div class="chart-card__canvas-wrap teknik-chart-wrap" id="teknik-chart-count-wrap">
+            <canvas id="teknik-chart-count" role="img" aria-label="Son on dört gün teknik oturum sayısı grafiği"></canvas>
           </div>
         </section>
 
@@ -87,9 +108,22 @@
         <section class="panel panel--teknik-list" aria-labelledby="teknik-list-title">
           <div class="panel__head-row">
             <h2 id="teknik-list-title" class="panel__h2">Son kayıtlar</h2>
-            <p class="panel__sub">En yeni 40 oturum</p>
+            <p class="panel__sub">En yeni 40 oturum — liste her zaman açık</p>
           </div>
-          <ul id="teknik-session-list" class="teknik-session-list"></ul>
+          <div class="teknik-records">
+            <div class="teknik-records-panel">
+              <div class="teknik-records-tab" aria-hidden="true">
+                <span class="teknik-records-tab__label">Son kayıtlar</span>
+                <span class="teknik-records-tab__count" id="teknik-records-count">0</span>
+              </div>
+              <div class="teknik-records-body">
+                <ul id="teknik-session-list" class="teknik-session-list records-card-list"></ul>
+                <p class="teknik-session-empty" id="teknik-session-empty" hidden>
+                  Teknik kayıt yok. <a href="yeni-kayit.html">Kayıt ekle</a> — kategori olarak Teknik seç.
+                </p>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </div>

@@ -85,22 +85,28 @@
           <div class="panel__head-row panel__head-row--list">
             <div class="panel__head-text">
               <h2 id="list-title" class="panel__h2">Kayıtlar</h2>
-              <p class="panel__sub">Tüm oturumlar — kategori ile süzebilirsin</p>
-            </div>
-            <div class="filters filters--gecmis">
-              <select id="filter-category" aria-label="Kategoriye göre filtre">
-                <option value="">Tümü</option>
-                <option value="english">YDS</option>
-                <option value="technical">Teknik</option>
-                <option value="book">Kitap</option>
-                <option value="investment">Yatırım</option>
-              </select>
+              <p class="panel__sub">Kategori sekmesi ile süz — oturumlar her zaman açık</p>
             </div>
           </div>
-          <div class="session-list-wrap">
-            <ul class="session-list" id="session-list"></ul>
+          <div class="gecmis-records">
+            <div class="gecmis-cat-tabs" role="tablist" aria-label="Kategori filtresi">
+              <button type="button" class="gecmis-cat-tab gecmis-cat-tab--active" role="tab" data-gecmis-filter="" aria-selected="true">Tümü</button>
+              <button type="button" class="gecmis-cat-tab gecmis-cat-tab--en" role="tab" data-gecmis-filter="english" aria-selected="false">YDS</button>
+              <button type="button" class="gecmis-cat-tab gecmis-cat-tab--tech" role="tab" data-gecmis-filter="technical" aria-selected="false">Teknik</button>
+              <button type="button" class="gecmis-cat-tab gecmis-cat-tab--book" role="tab" data-gecmis-filter="book" aria-selected="false">Kitap</button>
+              <button type="button" class="gecmis-cat-tab gecmis-cat-tab--inv" role="tab" data-gecmis-filter="investment" aria-selected="false">Yatırım</button>
+            </div>
+            <div class="gecmis-records-panel">
+              <div class="gecmis-records-tab" aria-hidden="true">
+                <span class="gecmis-records-tab__label">Kayıtlar</span>
+                <span class="gecmis-records-tab__count" id="gecmis-records-count">0</span>
+              </div>
+              <div class="gecmis-records-body">
+                <ul class="session-list session-list--gecmis records-card-list" id="session-list"></ul>
+                <p class="empty empty--gecmis" id="empty-msg">Kayıt yok. <a href="yeni-kayit.html">Ekle</a></p>
+              </div>
+            </div>
           </div>
-          <p class="empty empty--gecmis" id="empty-msg">Kayıt yok. <a href="yeni-kayit.html">Ekle</a></p>
         </section>
 
       </div>

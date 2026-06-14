@@ -1688,30 +1688,52 @@ body {
   transition: width 0.25s ease;
 }
 
-.book-block__sessions-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin: 1rem 0 0.35rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid rgba(214, 208, 200, 0.85);
+.book-block__sessions-tabpanel {
+  margin-top: 1rem;
+  min-width: 0;
 }
 
-.book-block__sessions-title {
-  margin: 0;
+.book-block__sessions-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid rgba(217, 119, 6, 0.22);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: #fff;
+  box-shadow: inset 0 2px 0 #d97706;
+}
+
+.book-block__sessions-tab-label {
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #78716c;
+  color: #b45309;
 }
 
-.book-block__sessions-count {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted);
+.book-block__sessions-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+  font-size: 0.72rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+.book-block__sessions-body {
+  padding: 0.85rem 0.9rem 0.35rem;
+  background: #fff;
+  border: 1px solid rgba(217, 119, 6, 0.22);
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
 }
 
 .book-block__record-meta strong {
@@ -1768,7 +1790,8 @@ body {
   margin-bottom: 0.4rem;
 }
 
-.book-block--card > .book-timeline {
+.book-block--card > .book-timeline,
+.book-block__sessions-body > .book-timeline {
   margin: 0;
   padding-top: 0;
   border-top: none;
@@ -2603,49 +2626,390 @@ body {
   overflow: hidden;
 }
 
-.panel--gecmis-list .session-list-wrap {
-  background: #fff;
-  border-color: #c4bbb0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+/* —— Geçmiş kayıtlar: kategori sekmeleri + kart listesi —— */
+.gecmis-records {
+  min-width: 0;
 }
 
-.panel--gecmis-list .session-list-wrap .session-list {
-  max-height: min(70vh, 720px);
-  padding: 0.5rem 0.65rem 0.65rem;
+.gecmis-cat-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.1rem 0.1rem 0;
+  margin-bottom: -1px;
+  scrollbar-width: thin;
 }
 
-.panel--gecmis-list .session-item {
-  padding: 0.95rem 0.6rem;
-  border-bottom: 1px solid rgba(214, 208, 200, 0.95);
-  border-radius: var(--radius-sm);
-}
-
-.panel--gecmis-list .session-item:nth-child(even) {
-  background: rgba(240, 235, 227, 0.55);
-}
-
-.panel--gecmis-list .session-item:last-child {
+.gecmis-cat-tab {
+  flex: 0 0 auto;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid rgba(214, 208, 200, 0.95);
   border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: rgba(245, 245, 244, 0.92);
+  color: #78716c;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.panel--gecmis-list .session-item__time {
-  color: var(--text);
-  font-size: 1.0625rem;
-  letter-spacing: -0.02em;
+.gecmis-cat-tab:hover {
+  background: rgba(255, 255, 255, 0.95);
 }
 
-.panel--gecmis-list .session-item__date {
-  color: #44403c;
-  font-weight: 500;
+.gecmis-cat-tab--active {
+  background: #fff;
+  box-shadow: inset 0 2px 0 #78716c;
 }
 
-.panel--gecmis-list .session-item__meta {
+.gecmis-cat-tab--active.gecmis-cat-tab--en {
+  color: #0f766e;
+  border-color: rgba(13, 148, 136, 0.28);
+  box-shadow: inset 0 2px 0 #0f766e;
+}
+
+.gecmis-cat-tab--active.gecmis-cat-tab--tech {
+  color: #6d28d9;
+  border-color: rgba(109, 40, 217, 0.25);
+  box-shadow: inset 0 2px 0 #7c3aed;
+}
+
+.gecmis-cat-tab--active.gecmis-cat-tab--book {
+  color: #b45309;
+  border-color: rgba(217, 119, 6, 0.28);
+  box-shadow: inset 0 2px 0 #d97706;
+}
+
+.gecmis-cat-tab--active.gecmis-cat-tab--inv {
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: inset 0 2px 0 #2563eb;
+}
+
+.gecmis-cat-tab:focus-visible {
+  outline: 2px solid rgba(13, 148, 136, 0.45);
+  outline-offset: 2px;
+}
+
+.gecmis-records-panel {
+  min-width: 0;
+}
+
+.gecmis-records-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid rgba(214, 208, 200, 0.95);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: #fff;
+  box-shadow: inset 0 2px 0 #78716c;
+}
+
+.gecmis-records-tab__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: #57534e;
 }
 
-.panel--gecmis-list .session-item__note {
+.gecmis-records-tab__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(120, 113, 108, 0.1);
+  color: #57534e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.gecmis-records-body {
+  padding: 0.85rem 0.9rem 0.5rem;
+  background: #fff;
+  border: 1px solid rgba(214, 208, 200, 0.95);
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+
+.panel--gecmis-list .gecmis-records-body .empty--gecmis {
+  margin: 0;
+  padding: 2rem 1rem;
+  border-radius: 10px;
+  background: rgba(245, 245, 244, 0.65);
+  border: 1px dashed rgba(214, 208, 200, 0.95);
+}
+
+.panel--gecmis-list .session-list--gecmis {
+  max-height: min(70vh, 720px);
+  overflow-y: auto;
+  padding: 0.15rem 0.1rem 0.35rem;
+}
+
+.records-card-list .session-item--card {
+  display: grid;
+  grid-template-columns: 1.35rem minmax(0, 1fr);
+  gap: 0 0.85rem;
+  align-items: stretch;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.records-card-list .session-item--card + .session-item--card {
+  margin-top: 0.15rem;
+}
+
+.records-card-list .session-item__rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 0.95rem;
+}
+
+.records-card-list .session-item__rail::before {
+  content: "";
+  position: absolute;
+  top: 1.35rem;
+  bottom: -0.35rem;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(214, 208, 200, 0.9);
+}
+
+.records-card-list .session-item--card:last-child .session-item__rail::before {
+  display: none;
+}
+
+.records-card-list .session-item__dot {
+  position: relative;
+  z-index: 1;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid #a8a29e;
+  box-shadow: 0 0 0 3px rgba(120, 113, 108, 0.1);
+}
+
+.records-card-list .session-item--en .session-item__dot {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+.records-card-list .session-item--tech .session-item__dot {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.records-card-list .session-item--book .session-item__dot {
+  border-color: #d97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
+}
+
+.records-card-list .session-item--inv .session-item__dot {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.records-card-list .session-item--card:first-child .session-item__dot {
+  background: #78716c;
+}
+
+.records-card-list .session-item--en:first-child .session-item__dot {
+  background: #0f766e;
+}
+
+.records-card-list .session-item--tech:first-child .session-item__dot {
+  background: #7c3aed;
+}
+
+.records-card-list .session-item--book:first-child .session-item__dot {
+  background: #d97706;
+}
+
+.records-card-list .session-item--inv:first-child .session-item__dot {
+  background: #2563eb;
+}
+
+.records-card-list .session-item__card {
+  margin: 0 0 0.65rem;
+  padding: 0.75rem 0.9rem 0.65rem;
+  background: #fff;
+  border: 1px solid rgba(214, 208, 200, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.records-card-list .session-item--en .session-item__card {
+  border-color: rgba(13, 148, 136, 0.18);
+}
+
+.records-card-list .session-item--tech .session-item__card {
+  border-color: rgba(124, 58, 237, 0.16);
+}
+
+.records-card-list .session-item--book .session-item__card {
+  border-color: rgba(217, 119, 6, 0.18);
+}
+
+.records-card-list .session-item--inv .session-item__card {
+  border-color: rgba(37, 99, 235, 0.16);
+}
+
+.records-card-list .session-item--card:hover .session-item__card {
+  box-shadow: 0 2px 8px rgba(28, 25, 23, 0.06);
+}
+
+.records-card-list .session-item__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 0.85rem;
+}
+
+.records-card-list .session-item__when {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.records-card-list .session-item__date {
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.records-card-list .session-item__time {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.records-card-list .session-item__badge {
+  border-radius: 999px;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.68rem;
+}
+
+.records-card-list .session-item__badge--en {
+  background: rgba(13, 148, 136, 0.12);
+  color: #0f766e;
+}
+
+.records-card-list .session-item__badge--tech {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+}
+
+.records-card-list .session-item__badge--book {
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+}
+
+.records-card-list .session-item__badge--inv {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+.records-card-list .session-item__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.records-card-list .session-item__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.records-card-list .session-item__chip--duration {
+  background: rgba(120, 113, 108, 0.1);
+  color: #44403c;
+}
+
+.records-card-list .session-item--tech .session-item__chip--duration {
+  background: rgba(124, 58, 237, 0.1);
+  color: #5b21b6;
+}
+
+.records-card-list .session-item__chip--muted {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+
+.records-card-list .session-item__meta {
+  margin-top: 0.5rem;
+  font-size: 0.84rem;
+  color: #57534e;
+  line-height: 1.45;
+}
+
+.records-card-list .session-item__note {
+  margin: 0.55rem 0 0;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(214, 208, 200, 0.75);
+  font-size: 0.84rem;
   line-height: 1.5;
+  color: var(--text);
+}
+
+.records-card-list .session-item__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.55rem;
+}
+
+.records-card-list .session-item__del {
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: rgba(254, 242, 242, 0.85);
+  color: #b91c1c;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.records-card-list .session-item__del:hover {
+  background: #fee2e2;
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.panel--gecmis-list .panel__head-row--list {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 560px) {
+  .records-card-list .session-item__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .shell__content--yeni .panel--yeni-form {
@@ -3545,13 +3909,19 @@ body {
   margin-bottom: 1rem;
 }
 
+.teknik-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
 .teknik-hero-stat {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   padding: 1rem 1.1rem;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(124, 58, 237, 0.16);
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), var(--surface2));
 }
 
@@ -3575,65 +3945,81 @@ body {
   margin: 0 0 0.75rem;
 }
 
-.teknik-session-list {
+.teknik-records {
+  min-width: 0;
+}
+
+.teknik-records-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: #fff;
+  box-shadow: inset 0 2px 0 #7c3aed;
+}
+
+.teknik-records-tab__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6d28d9;
+}
+
+.teknik-records-tab__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.12);
+  color: #5b21b6;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.teknik-records-body {
+  padding: 0.85rem 0.9rem 0.5rem;
+  background: #fff;
+  border: 1px solid rgba(124, 58, 237, 0.18);
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+
+.panel--teknik-list .teknik-records-body .teknik-session-empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+  border-radius: 10px;
+  background: rgba(245, 243, 255, 0.75);
+  border: 1px dashed rgba(124, 58, 237, 0.2);
+}
+
+.panel--teknik-list .teknik-records-body .teknik-session-empty a {
+  font-weight: 600;
+  color: #6d28d9;
+}
+
+.panel--teknik-list .teknik-session-list.records-card-list {
+  max-height: min(70vh, 720px);
+  overflow-y: auto;
+  padding: 0.15rem 0.1rem 0.35rem;
   list-style: none;
   margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
 }
 
-.teknik-session-item {
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface2);
-  padding: 0.75rem 1rem;
-  position: relative;
-  padding-bottom: 2.5rem;
+.panel--teknik-list .panel__head-row {
+  margin-bottom: 1rem;
 }
 
-.teknik-session-item__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-}
-
-.teknik-session-item__mins {
-  font-weight: 600;
-  color: #5b21b6;
-}
-
-.teknik-session-item__date {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.teknik-session-item__meta {
-  margin-top: 0.45rem;
-  font-size: 0.9rem;
-  color: var(--text);
-  line-height: 1.4;
-}
-
-.teknik-session-item__note {
-  margin: 0.5rem 0 0;
-  font-size: 0.875rem;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.teknik-session-item__del {
-  position: absolute;
-  right: 0.65rem;
-  bottom: 0.55rem;
-}
-
-.teknik-session-empty {
-  list-style: none;
-  padding: 1rem 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+.records-card-list .session-item--tech .session-item__rail::before {
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.35) 0%, rgba(214, 208, 200, 0.85) 100%);
 }

@@ -1521,6 +1521,7 @@
   var ydsSubtypeChart = null;
   var ydsCumulativeChart = null;
   var teknikTrendChart = null;
+  var teknikCountChart = null;
   var teknikTopicChart = null;
 
   var timerElapsedSec = 0;
@@ -1611,7 +1612,7 @@
     el = {
       sessionList: q("session-list"),
       emptyMsg: q("empty-msg"),
-      filterCategory: q("filter-category"),
+      gecmisRecordsCount: q("gecmis-records-count"),
       btnExport: q("btn-export"),
       importFile: q("import-file"),
     };
@@ -2133,10 +2134,144 @@
     if (changed) saveState(state);
   }
 
+  function getGecmisFilter() {
+    var active = document.querySelector(".gecmis-cat-tab--active");
+    if (!active) return "";
+    return active.getAttribute("data-gecmis-filter") || "";
+  }
+
+  function gecmisCatModifier(cat) {
+    if (cat === "english") return "en";
+    if (cat === "technical") return "tech";
+    if (cat === "book") return "book";
+    if (cat === "investment") return "inv";
+    return "misc";
+  }
+
+  function gecmisSessionMetaParts(s, cat) {
+    var metaParts = [];
+    if (cat === "english") {
+      var enMeta = formatEnglishSessionMeta(s);
+      if (enMeta) metaParts.push(enMeta);
+    }
+    if (cat === "technical" && s.techTopic) {
+      metaParts.push(s.techTopic);
+    }
+    if (cat === "book") {
+      if (s.bookTitle) metaParts.push(s.bookTitle);
+      if (s.pagesRead != null) metaParts.push(sessionPagesRead(s) + " syf");
+    }
+    if (cat === "investment") {
+      if (s.assetName) metaParts.push(s.assetName);
+      if (s.sharePrice != null && !isNaN(s.sharePrice)) metaParts.push(String(s.sharePrice) + " ₺/adet");
+      else if (s.shareQuantity != null && !isNaN(s.shareQuantity))
+        metaParts.push(String(s.shareQuantity) + " adet (eski kayıt)");
+      if (s.amount != null && !isNaN(s.amount)) metaParts.push(String(s.amount) + " " + (s.currency || "TRY"));
+      if (s.investAction && investActionLabels[s.investAction]) metaParts.push(investActionLabels[s.investAction]);
+    }
+    if (s.tags && s.tags.length) {
+      metaParts.push(s.tags.join(", "));
+    }
+    if (cat === "investment" && !metaParts.length) metaParts.push("Yatırım kaydı");
+    return metaParts;
+  }
+
+  function renderGecmisSessionItemHtml(s) {
+    var cat = String(s.category || "").trim();
+    var mod = gecmisCatModifier(cat);
+    var when = formatBookTimelineWhen(sessionEffectiveTime(s));
+    var badgeText = categoryLabels[cat] || cat;
+    var metaParts = gecmisSessionMetaParts(s, cat);
+    var durationChip =
+      cat === "investment"
+        ? '<span class="session-item__chip session-item__chip--muted">İşlem</span>'
+        : '<span class="session-item__chip session-item__chip--duration">' +
+          formatMinutesForDisplay(s.durationMinutes || 0) +
+          " dk</span>";
+    return (
+      '<li class="session-item session-item--card session-item--' +
+      mod +
+      '" data-id="' +
+      escapeHtml(s.id) +
+      '">' +
+      '<div class="session-item__rail" aria-hidden="true"><span class="session-item__dot"></span></div>' +
+      '<article class="session-item__card">' +
+      '<div class="session-item__head">' +
+      '<time class="session-item__when" datetime="' +
+      escapeHtml(String(sessionEffectiveTime(s) || "")) +
+      '">' +
+      '<span class="session-item__date">' +
+      escapeHtml(when.date) +
+      "</span>" +
+      (when.time ? '<span class="session-item__time">' + escapeHtml(when.time) + "</span>" : "") +
+      "</time>" +
+      '<span class="session-item__badge session-item__badge--' +
+      mod +
+      '">' +
+      escapeHtml(badgeText) +
+      "</span>" +
+      "</div>" +
+      '<div class="session-item__stats">' +
+      durationChip +
+      "</div>" +
+      (metaParts.length
+        ? '<div class="session-item__meta">' + escapeHtml(metaParts.join(" · ")) + "</div>"
+        : "") +
+      (s.note ? '<p class="session-item__note">' + escapeHtml(String(s.note)) + "</p>" : "") +
+      '<div class="session-item__actions">' +
+      '<button type="button" class="session-item__del" data-session-delete="' +
+      escapeHtml(s.id) +
+      '">Sil</button>' +
+      "</div>" +
+      "</article></li>"
+    );
+  }
+
+  function renderTeknikSessionItemHtml(s) {
+    var when = formatBookTimelineWhen(sessionEffectiveTime(s));
+    var topicTxt = s.techTopic && String(s.techTopic).trim() ? String(s.techTopic).trim() : "";
+    var metaBits = [];
+    if (topicTxt) metaBits.push(topicTxt);
+    if (s.tags && s.tags.length) metaBits.push(s.tags.join(", "));
+    return (
+      '<li class="session-item session-item--card session-item--tech" data-id="' +
+      escapeHtml(s.id) +
+      '">' +
+      '<div class="session-item__rail" aria-hidden="true"><span class="session-item__dot"></span></div>' +
+      '<article class="session-item__card">' +
+      '<div class="session-item__head">' +
+      '<time class="session-item__when" datetime="' +
+      escapeHtml(String(sessionEffectiveTime(s) || "")) +
+      '">' +
+      '<span class="session-item__date">' +
+      escapeHtml(when.date) +
+      "</span>" +
+      (when.time ? '<span class="session-item__time">' + escapeHtml(when.time) + "</span>" : "") +
+      "</time>" +
+      '<span class="session-item__badge session-item__badge--tech">Teknik</span>' +
+      "</div>" +
+      '<div class="session-item__stats">' +
+      '<span class="session-item__chip session-item__chip--duration">' +
+      formatMinutesForDisplay(s.durationMinutes || 0) +
+      " dk</span>" +
+      "</div>" +
+      (metaBits.length
+        ? '<div class="session-item__meta">' + escapeHtml(metaBits.join(" · ")) + "</div>"
+        : "") +
+      (s.note ? '<p class="session-item__note">' + escapeHtml(String(s.note)) + "</p>" : "") +
+      '<div class="session-item__actions">' +
+      '<button type="button" class="session-item__del" data-teknik-delete="' +
+      escapeHtml(s.id) +
+      '">Sil</button>' +
+      "</div>" +
+      "</article></li>"
+    );
+  }
+
   function renderList() {
     if (!el.sessionList) return;
     state = loadState();
-    var filter = String(el.filterCategory.value || "").trim();
+    var filter = getGecmisFilter();
     var list = state.sessions.slice().sort(function (a, b) {
       var ta = new Date(sessionEffectiveTime(a)).getTime();
       var tb = new Date(sessionEffectiveTime(b)).getTime();
@@ -2151,93 +2286,28 @@
       });
     }
 
-    el.sessionList.innerHTML = "";
+    if (el.gecmisRecordsCount) {
+      el.gecmisRecordsCount.textContent = String(list.length);
+    }
+
     if (list.length === 0) {
+      el.sessionList.innerHTML = "";
       el.emptyMsg.classList.add("is-visible");
       return;
     }
     el.emptyMsg.classList.remove("is-visible");
+    el.sessionList.innerHTML = list.map(renderGecmisSessionItemHtml).join("");
+  }
 
-    list.forEach(function (s) {
-      var cat = String(s.category || "").trim();
-      var li = document.createElement("li");
-      li.className = "session-item";
-      li.dataset.id = s.id;
-
-      var badgeClass = "session-item__badge--tech";
-      if (cat === "english") badgeClass = "session-item__badge--en";
-      else if (cat === "book") badgeClass = "session-item__badge--book";
-      else if (cat === "investment") badgeClass = "session-item__badge--inv";
-      var badgeText = categoryLabels[cat] || cat;
-
-      var metaParts = [];
-      if (cat === "english") {
-        var enMeta = formatEnglishSessionMeta(s);
-        if (enMeta) metaParts.push(enMeta);
-      }
-      if (cat === "technical" && s.techTopic) {
-        metaParts.push(s.techTopic);
-      }
-      if (cat === "book") {
-        if (s.bookTitle) metaParts.push(s.bookTitle);
-        if (s.pagesRead != null) metaParts.push(sessionPagesRead(s) + " syf");
-      }
-      if (cat === "investment") {
-        if (s.assetName) metaParts.push(s.assetName);
-        if (s.sharePrice != null && !isNaN(s.sharePrice)) metaParts.push(String(s.sharePrice) + " ₺/adet");
-        else if (s.shareQuantity != null && !isNaN(s.shareQuantity))
-          metaParts.push(String(s.shareQuantity) + " adet (eski kayıt)");
-        if (s.amount != null && !isNaN(s.amount)) metaParts.push(String(s.amount) + " " + (s.currency || "TRY"));
-        if (s.investAction && investActionLabels[s.investAction]) metaParts.push(investActionLabels[s.investAction]);
-      }
-      if (s.tags && s.tags.length) {
-        metaParts.push(s.tags.join(", "));
-      }
-      if (cat === "investment" && !metaParts.length) metaParts.push("Yatırım kaydı");
-
-      var top = document.createElement("div");
-      top.className = "session-item__top";
-      top.innerHTML =
-        '<span class="session-item__badge ' +
-        badgeClass +
-        '">' +
-        escapeHtml(badgeText) +
-        "</span>" +
-        '<span class="session-item__time">' +
-        (cat === "investment" ? "—" : formatMinutesForDisplay(s.durationMinutes || 0) + " dk") +
-        "</span>" +
-        '<span class="session-item__date">' +
-        escapeHtml(formatSessionDate(sessionEffectiveTime(s))) +
-        "</span>";
-
-      li.appendChild(top);
-
-      if (metaParts.length) {
-        var meta = document.createElement("div");
-        meta.className = "session-item__meta";
-        meta.textContent = metaParts.join(" · ");
-        li.appendChild(meta);
-      }
-
-      if (s.note) {
-        var p = document.createElement("p");
-        p.className = "session-item__note";
-        p.textContent = s.note;
-        li.appendChild(p);
-      }
-
-      var actions = document.createElement("div");
-      actions.className = "session-item__actions";
-      var del = document.createElement("button");
-      del.type = "button";
-      del.textContent = "Sil";
-      del.addEventListener("click", function () {
-        deleteSession(s.id);
-      });
-      actions.appendChild(del);
-      li.appendChild(actions);
-
-      el.sessionList.appendChild(li);
+  function bindGecmisSessionDeletes() {
+    var listRoot = el.sessionList;
+    if (!listRoot || listRoot.dataset.deleteBound) return;
+    listRoot.dataset.deleteBound = "1";
+    listRoot.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-session-delete]");
+      if (!btn) return;
+      var sid = btn.getAttribute("data-session-delete");
+      if (sid) deleteSession(sid);
     });
   }
 
@@ -2452,6 +2522,183 @@
       statCard("year", "Yıl", yearWhen, y);
   }
 
+  function bookSessionsTabPanelHtml(sessionCount, rowsHtml) {
+    return (
+      '<div class="book-block__sessions-tabpanel">' +
+      '<div class="book-block__sessions-tab" aria-hidden="true">' +
+      '<span class="book-block__sessions-tab-label">Okuma oturumları</span>' +
+      '<span class="book-block__sessions-tab-count">' +
+      sessionCount +
+      "</span>" +
+      "</div>" +
+      '<div class="book-block__sessions-body">' +
+      '<ul class="book-timeline book-timeline--rail">' +
+      rowsHtml +
+      "</ul></div></div>"
+    );
+  }
+
+  function renderKitaplarBookBlockHtml(bid, ids) {
+    var title = ids[bid];
+    var meta = state.books.filter(function (b) {
+      return b.id === bid;
+    })[0];
+    var subs = bookSessionsForId(bid).slice().reverse();
+    if (subs.length === 0) {
+      return (
+        '<div class="book-block book-block--card" data-book-id="' +
+        escapeHtml(bid) +
+        '"><h3 class="book-block__title">' +
+        escapeHtml(title) +
+        '</h3><p class="table-muted">Oturum yok.</p></div>'
+      );
+    }
+    var totalP = sumPagesForBook(bid);
+    var totalM = sumMinutesForBook(bid);
+    var pagesSummary =
+      meta && meta.totalPages != null && !isNaN(meta.totalPages) && meta.totalPages > 0
+        ? totalP + " / " + meta.totalPages + " syf"
+        : totalP + " syf";
+    var startShow = meta && meta.startedAt ? meta.startedAt : subs[0] ? subs[0].createdAt : null;
+    var endShow = meta && meta.finishedAt ? meta.finishedAt : null;
+    var metaEdit =
+      meta ?
+        '<div class="book-meta-edit book-dates-edit book-dates-edit--inline">' +
+        '<label class="book-dates-edit__field book-dates-edit__field--title">' +
+        '<span class="book-dates-edit__ic">' +
+        BOOK_ICON_INLINE_TITLE_SVG +
+        '</span><input type="text" class="book-edit-title" data-book-id="' +
+        escapeHtml(bid) +
+        '" value="' +
+        escapeHtml(meta.title) +
+        '" aria-label="Kitap adı" title="Kitap adı" />' +
+        "</label>" +
+        '<label class="book-dates-edit__field">' +
+        '<span class="book-dates-edit__ic">' +
+        BOOK_ICON_INLINE_AUTHOR_SVG +
+        '</span><input type="text" class="book-edit-author" data-book-id="' +
+        escapeHtml(bid) +
+        '" value="' +
+        escapeHtml(meta.author || "") +
+        '" aria-label="Yazar" title="Yazar" />' +
+        "</label>" +
+        '<label class="book-dates-edit__field book-dates-edit__field--narrow">' +
+        '<span class="book-dates-edit__ic">' +
+        BOOK_ICON_INLINE_PAGES_SVG +
+        '</span><input type="number" min="1" class="book-edit-pages" data-book-id="' +
+        escapeHtml(bid) +
+        '" value="' +
+        (meta.totalPages ? String(meta.totalPages) : "") +
+        '" aria-label="Toplam sayfa" title="Toplam sayfa" />' +
+        "</label>" +
+        '<button type="button" class="btn-icon btn-icon--save book-meta-save" data-book-id="' +
+        escapeHtml(bid) +
+        '" aria-label="Bilgileri kaydet" title="Kaydet">' +
+        BOOK_ICON_SAVE_SVG +
+        "</button>" +
+        "</div>"
+      : "";
+    var datesEdit =
+      meta ?
+        '<div class="book-dates-edit book-dates-edit--inline">' +
+        '<label class="book-dates-edit__field">' +
+        '<span class="book-dates-edit__ic">' +
+        BOOK_ICON_INLINE_DATE_FROM_SVG +
+        '</span><input type="date" class="book-date-start" data-book-id="' +
+        escapeHtml(bid) +
+        '" value="' +
+        isoToDateInputValue(meta.startedAt || (subs[0] ? subs[0].createdAt : "")) +
+        '" aria-label="Başlangıç tarihi" title="Başlangıç" />' +
+        "</label>" +
+        '<label class="book-dates-edit__field">' +
+        '<span class="book-dates-edit__ic">' +
+        BOOK_ICON_INLINE_DATE_TO_SVG +
+        '</span><input type="date" class="book-date-end" data-book-id="' +
+        escapeHtml(bid) +
+        '" value="' +
+        isoToDateInputValue(meta.finishedAt || "") +
+        '" aria-label="Bitiş tarihi" title="Bitiş" />' +
+        "</label>" +
+        '<button type="button" class="btn-icon btn-icon--dates book-date-save" data-book-id="' +
+        escapeHtml(bid) +
+        '" aria-label="Tarihleri uygula" title="Tarihleri uygula">' +
+        BOOK_ICON_CALENDAR_SVG +
+        "</button>" +
+        "</div>"
+      : '<p class="book-block__dates">Başlangıç: ' +
+        formatDateOnly(startShow) +
+        " · Bitiş: " +
+        formatDateOnly(endShow) +
+        "</p>";
+    var dateRangeLine =
+      (startShow ? formatDateOnly(startShow) : "—") +
+      " → " +
+      (endShow ? formatDateOnly(endShow) : "—");
+    var sessionCountLabel = subs.length + " oturum";
+    var summaryChips =
+      '<div class="book-block__chips">' +
+      '<span class="book-block__chip">' +
+      sessionCountLabel +
+      "</span>" +
+      '<span class="book-block__chip book-block__chip--pages">' +
+      pagesSummary +
+      "</span>" +
+      '<span class="book-block__chip book-block__chip--mins">' +
+      totalM +
+      " dk</span>" +
+      '<span class="book-block__chip book-block__chip--range">' +
+      dateRangeLine +
+      "</span>" +
+      "</div>" +
+      bookBlockProgressHtml(meta, totalP);
+    var sessionsPanel = bookSessionsTabPanelHtml(
+      subs.length,
+      subs.map(renderBookTimelineSessionHtml).join("")
+    );
+    if (meta) {
+      return (
+        '<div class="book-block book-block--card" data-book-id="' +
+        escapeHtml(bid) +
+        '">' +
+        '<div class="book-block__record">' +
+        '<div class="book-block__record-main">' +
+        '<div class="book-block__record-title">' +
+        escapeHtml(meta.title) +
+        "</div>" +
+        (meta.author
+          ? '<div class="book-block__record-meta book-block__record-meta--author">' +
+            escapeHtml(meta.author) +
+            "</div>"
+          : "") +
+        summaryChips +
+        "</div>" +
+        '<button type="button" class="book-block__edit-toggle" data-book-toggle-edit="' +
+        escapeHtml(bid) +
+        '" aria-label="Kitabı düzenle" title="Düzenle" aria-expanded="false">' +
+        BOOK_ICON_PENCIL_SVG +
+        "</button>" +
+        "</div>" +
+        '<div class="book-block__editor" hidden>' +
+        metaEdit +
+        datesEdit +
+        "</div>" +
+        sessionsPanel +
+        "</div>"
+      );
+    }
+    return (
+      '<div class="book-block book-block--card" data-book-id="' +
+      escapeHtml(bid) +
+      '"><h3 class="book-block__title">' +
+      escapeHtml(title) +
+      "</h3>" +
+      summaryChips +
+      datesEdit +
+      sessionsPanel +
+      "</div>"
+    );
+  }
+
   function renderKitaplarPage() {
     var finishedEl = document.getElementById("kitaplar-finished-body");
     var timelineEl = document.getElementById("kitaplar-timeline");
@@ -2554,168 +2801,7 @@
 
     timelineEl.innerHTML = bookIdList
       .map(function (bid) {
-        var title = ids[bid];
-        var meta = state.books.filter(function (b) {
-          return b.id === bid;
-        })[0];
-        var subs = bookSessionsForId(bid).slice().reverse();
-        if (subs.length === 0) {
-          return (
-            '<div class="book-block book-block--card"><h3 class="book-block__title">' +
-            escapeHtml(title) +
-            "</h3><p class=\"table-muted\">Oturum yok.</p></div>"
-          );
-        }
-        var totalP = sumPagesForBook(bid);
-        var totalM = sumMinutesForBook(bid);
-        var pagesSummary =
-          meta && meta.totalPages != null && !isNaN(meta.totalPages) && meta.totalPages > 0
-            ? totalP + " / " + meta.totalPages + " syf"
-            : totalP + " syf";
-        var startShow = meta && meta.startedAt ? meta.startedAt : subs[0] ? subs[0].createdAt : null;
-        var endShow = meta && meta.finishedAt ? meta.finishedAt : null;
-        var metaEdit =
-          meta ?
-            '<div class="book-meta-edit book-dates-edit book-dates-edit--inline">' +
-            '<label class="book-dates-edit__field book-dates-edit__field--title">' +
-            '<span class="book-dates-edit__ic">' +
-            BOOK_ICON_INLINE_TITLE_SVG +
-            '</span><input type="text" class="book-edit-title" data-book-id="' +
-            escapeHtml(bid) +
-            '" value="' +
-            escapeHtml(meta.title) +
-            '" aria-label="Kitap adı" title="Kitap adı" />' +
-            "</label>" +
-            '<label class="book-dates-edit__field">' +
-            '<span class="book-dates-edit__ic">' +
-            BOOK_ICON_INLINE_AUTHOR_SVG +
-            '</span><input type="text" class="book-edit-author" data-book-id="' +
-            escapeHtml(bid) +
-            '" value="' +
-            escapeHtml(meta.author || "") +
-            '" aria-label="Yazar" title="Yazar" />' +
-            "</label>" +
-            '<label class="book-dates-edit__field book-dates-edit__field--narrow">' +
-            '<span class="book-dates-edit__ic">' +
-            BOOK_ICON_INLINE_PAGES_SVG +
-            '</span><input type="number" min="1" class="book-edit-pages" data-book-id="' +
-            escapeHtml(bid) +
-            '" value="' +
-            (meta.totalPages ? String(meta.totalPages) : "") +
-            '" aria-label="Toplam sayfa" title="Toplam sayfa" />' +
-            "</label>" +
-            '<button type="button" class="btn-icon btn-icon--save book-meta-save" data-book-id="' +
-            escapeHtml(bid) +
-            '" aria-label="Bilgileri kaydet" title="Kaydet">' +
-            BOOK_ICON_SAVE_SVG +
-            "</button>" +
-            "</div>"
-          : "";
-        var datesEdit =
-          meta ?
-            '<div class="book-dates-edit book-dates-edit--inline">' +
-            '<label class="book-dates-edit__field">' +
-            '<span class="book-dates-edit__ic">' +
-            BOOK_ICON_INLINE_DATE_FROM_SVG +
-            '</span><input type="date" class="book-date-start" data-book-id="' +
-            escapeHtml(bid) +
-            '" value="' +
-            isoToDateInputValue(meta.startedAt || (subs[0] ? subs[0].createdAt : "")) +
-            '" aria-label="Başlangıç tarihi" title="Başlangıç" />' +
-            "</label>" +
-            '<label class="book-dates-edit__field">' +
-            '<span class="book-dates-edit__ic">' +
-            BOOK_ICON_INLINE_DATE_TO_SVG +
-            '</span><input type="date" class="book-date-end" data-book-id="' +
-            escapeHtml(bid) +
-            '" value="' +
-            isoToDateInputValue(meta.finishedAt || "") +
-            '" aria-label="Bitiş tarihi" title="Bitiş" />' +
-            "</label>" +
-            '<button type="button" class="btn-icon btn-icon--dates book-date-save" data-book-id="' +
-            escapeHtml(bid) +
-            '" aria-label="Tarihleri uygula" title="Tarihleri uygula">' +
-            BOOK_ICON_CALENDAR_SVG +
-            "</button>" +
-            "</div>"
-          : '<p class="book-block__dates">Başlangıç: ' +
-            formatDateOnly(startShow) +
-            " · Bitiş: " +
-            formatDateOnly(endShow) +
-            "</p>";
-        var dateRangeLine =
-          (startShow ? formatDateOnly(startShow) : "—") +
-          " → " +
-          (endShow ? formatDateOnly(endShow) : "—");
-        var sessionCountLabel = subs.length + " oturum";
-        var summaryChips =
-          '<div class="book-block__chips">' +
-          '<span class="book-block__chip">' +
-          sessionCountLabel +
-          "</span>" +
-          '<span class="book-block__chip book-block__chip--pages">' +
-          pagesSummary +
-          "</span>" +
-          '<span class="book-block__chip book-block__chip--mins">' +
-          totalM +
-          " dk</span>" +
-          '<span class="book-block__chip book-block__chip--range">' +
-          dateRangeLine +
-          "</span>" +
-          "</div>" +
-          bookBlockProgressHtml(meta, totalP);
-        var head;
-        if (meta) {
-          head =
-            '<div class="book-block book-block--card" data-book-id="' +
-            escapeHtml(bid) +
-            '">' +
-            '<div class="book-block__record">' +
-            '<div class="book-block__record-main">' +
-            '<div class="book-block__record-title">' +
-            escapeHtml(meta.title) +
-            "</div>" +
-            (meta.author
-              ? '<div class="book-block__record-meta book-block__record-meta--author">' +
-                escapeHtml(meta.author) +
-                "</div>"
-              : "") +
-            summaryChips +
-            "</div>" +
-            '<button type="button" class="book-block__edit-toggle" data-book-toggle-edit="' +
-            escapeHtml(bid) +
-            '" aria-label="Kitabı düzenle" title="Düzenle" aria-expanded="false">' +
-            BOOK_ICON_PENCIL_SVG +
-            "</button>" +
-            "</div>" +
-            '<div class="book-block__editor" hidden>' +
-            metaEdit +
-            datesEdit +
-            "</div>" +
-            '<div class="book-block__sessions-head">' +
-            '<h3 class="book-block__sessions-title">Okuma oturumları</h3>' +
-            '<span class="book-block__sessions-count">' +
-            sessionCountLabel +
-            "</span>" +
-            "</div>" +
-            '<ul class="book-timeline book-timeline--rail">';
-        } else {
-          head =
-            '<div class="book-block book-block--card"><h3 class="book-block__title">' +
-            escapeHtml(title) +
-            "</h3>" +
-            summaryChips +
-            datesEdit +
-            '<div class="book-block__sessions-head">' +
-            '<h3 class="book-block__sessions-title">Okuma oturumları</h3>' +
-            '<span class="book-block__sessions-count">' +
-            sessionCountLabel +
-            "</span>" +
-            "</div>" +
-            '<ul class="book-timeline book-timeline--rail">';
-        }
-        var rows = subs.map(renderBookTimelineSessionHtml).join("");
-        return head + rows + "</ul></div>";
+        return renderKitaplarBookBlockHtml(bid, ids);
       })
       .join("");
   }
@@ -2984,6 +3070,10 @@
       teknikTrendChart.destroy();
       teknikTrendChart = null;
     }
+    if (teknikCountChart) {
+      teknikCountChart.destroy();
+      teknikCountChart = null;
+    }
     if (teknikTopicChart) {
       teknikTopicChart.destroy();
       teknikTopicChart = null;
@@ -2991,13 +3081,53 @@
   }
 
   function weeklyTechnicalMinutes() {
-    var sum = 0;
+    return weeklyTechnicalStats().minutes;
+  }
+
+  function weeklyTechnicalStats() {
+    var sessions = 0;
+    var minutes = 0;
+    var days = {};
     state.sessions.forEach(function (s) {
       if (String(s.category || "").trim() !== "technical") return;
-      if (!isInCurrentWeek(sessionEffectiveTime(s))) return;
-      sum += s.durationMinutes || 0;
+      var iso = sessionEffectiveTime(s);
+      if (!iso || !isInCurrentWeek(iso)) return;
+      sessions++;
+      minutes += s.durationMinutes || 0;
+      days[dateKeyLocal(new Date(iso))] = true;
     });
-    return sum;
+    return {
+      sessions: sessions,
+      minutes: minutes,
+      activeDays: Object.keys(days).length,
+    };
+  }
+
+  function technicalDailySeriesLast14() {
+    var labels = [];
+    var minutes = [];
+    var counts = [];
+    var t;
+    for (t = 13; t >= 0; t--) {
+      var dt = new Date();
+      dt.setHours(0, 0, 0, 0);
+      dt.setDate(dt.getDate() - t);
+      var dk = dateKeyLocal(dt);
+      labels.push(dt.getDate() + " " + MONTH_SHORT_TR[dt.getMonth()]);
+      var dm = 0;
+      var cnt = 0;
+      state.sessions.forEach(function (s) {
+        if (String(s.category || "").trim() !== "technical") return;
+        var iso = sessionEffectiveTime(s);
+        if (!iso) return;
+        if (dateKeyLocal(new Date(iso)) !== dk) return;
+        cnt++;
+        dm += s.durationMinutes || 0;
+      });
+      minutes.push(dm);
+      counts.push(cnt);
+    }
+    return { labels: labels, minutes: minutes, counts: counts };
   }
 
   function renderTeknikPage() {
@@ -3005,34 +3135,24 @@
     state = loadState();
     destroyTeknikCharts();
 
+    var weekStats = weeklyTechnicalStats();
     var wk = document.getElementById("teknik-stat-week");
-    if (wk) wk.textContent = formatMinutesForDisplay(weeklyTechnicalMinutes());
+    var wkSessions = document.getElementById("teknik-stat-week-sessions");
+    var wkDays = document.getElementById("teknik-stat-week-days");
+    if (wk) wk.textContent = formatMinutesForDisplay(weekStats.minutes);
+    if (wkSessions) wkSessions.textContent = String(weekStats.sessions);
+    if (wkDays) wkDays.textContent = String(weekStats.activeDays);
 
+    var series14 = technicalDailySeriesLast14();
     var canvasTrend = document.getElementById("teknik-chart-trend");
     var emptyTrend = document.getElementById("teknik-chart-trend-empty");
     var wrapTrend = document.getElementById("teknik-chart-trend-wrap");
     var sum14 = 0;
+    var si;
+    for (si = 0; si < series14.minutes.length; si++) {
+      sum14 += series14.minutes[si];
+    }
     if (canvasTrend && typeof Chart !== "undefined") {
-      var labels = [];
-      var dataMin = [];
-      var t;
-      for (t = 13; t >= 0; t--) {
-        var dt = new Date();
-        dt.setHours(0, 0, 0, 0);
-        dt.setDate(dt.getDate() - t);
-        var dk = dateKeyLocal(dt);
-        labels.push(dt.getDate() + " " + MONTH_SHORT_TR[dt.getMonth()]);
-        var dm = 0;
-        state.sessions.forEach(function (s) {
-          if (String(s.category || "").trim() !== "technical") return;
-          var iso = sessionEffectiveTime(s);
-          if (!iso) return;
-          if (dateKeyLocal(new Date(iso)) !== dk) return;
-          dm += s.durationMinutes || 0;
-        });
-        dataMin.push(dm);
-        sum14 += dm;
-      }
       if (sum14 <= 0) {
         if (emptyTrend) {
           emptyTrend.hidden = false;
@@ -3045,11 +3165,11 @@
         teknikTrendChart = new Chart(canvasTrend, {
           type: "line",
           data: {
-            labels: labels,
+            labels: series14.labels,
             datasets: [
               {
                 label: "Teknik (dk)",
-                data: dataMin,
+                data: series14.minutes,
                 borderColor: "#7c3aed",
                 backgroundColor: "rgba(124, 58, 237, 0.12)",
                 fill: true,
@@ -3082,7 +3202,80 @@
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
-                    return "Süre: " + v + " dk";
+                    var dayIdx = ctx.dataIndex;
+                    var cnt = series14.counts[dayIdx] || 0;
+                    return ["Süre: " + v + " dk", "Oturum: " + cnt];
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+    }
+
+    var canvasCount = document.getElementById("teknik-chart-count");
+    var emptyCount = document.getElementById("teknik-chart-count-empty");
+    var wrapCount = document.getElementById("teknik-chart-count-wrap");
+    var sumCount14 = 0;
+    for (si = 0; si < series14.counts.length; si++) {
+      sumCount14 += series14.counts[si];
+    }
+    if (canvasCount && typeof Chart !== "undefined") {
+      if (sumCount14 <= 0) {
+        if (emptyCount) {
+          emptyCount.hidden = false;
+          emptyCount.textContent = "Son 14 günde teknik oturum yok.";
+        }
+        if (wrapCount) wrapCount.hidden = true;
+      } else {
+        if (emptyCount) emptyCount.hidden = true;
+        if (wrapCount) wrapCount.hidden = false;
+        teknikCountChart = new Chart(canvasCount, {
+          type: "bar",
+          data: {
+            labels: series14.labels,
+            datasets: [
+              {
+                label: "Oturum",
+                data: series14.counts,
+                backgroundColor: "rgba(124, 58, 237, 0.55)",
+                hoverBackgroundColor: "rgba(124, 58, 237, 0.78)",
+                borderColor: "#7c3aed",
+                borderWidth: 1,
+                borderRadius: 6,
+                maxBarThickness: 28,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              x: { grid: { display: false } },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1,
+                  precision: 0,
+                  callback: function (v) {
+                    if (Math.floor(v) !== v) return "";
+                    return v;
+                  },
+                },
+                title: { display: true, text: "Oturum sayısı" },
+              },
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
+                    var dayIdx = ctx.dataIndex;
+                    var mins = series14.minutes[dayIdx] || 0;
+                    return [v + " oturum", "Toplam: " + mins + " dk"];
                   },
                 },
               },
@@ -3164,6 +3357,8 @@
     }
 
     var listEl = document.getElementById("teknik-session-list");
+    var countEl = document.getElementById("teknik-records-count");
+    var emptyEl = document.getElementById("teknik-session-empty");
     if (listEl) {
       var rows = [];
       state.sessions.forEach(function (s) {
@@ -3176,36 +3371,17 @@
         return b.t - a.t;
       });
       var limit = 40;
-      var html = [];
-      var ri;
-      for (ri = 0; ri < rows.length && ri < limit; ri++) {
-        var s = rows[ri].s;
-        var topicTxt = s.techTopic && String(s.techTopic).trim() ? String(s.techTopic).trim() : "";
-        var metaBits = [];
-        if (topicTxt) metaBits.push(topicTxt);
-        if (s.tags && s.tags.length) metaBits.push(s.tags.join(", "));
-        var metaStr = metaBits.length ? escapeHtml(metaBits.join(" · ")) : "";
-        html.push(
-          '<li class="teknik-session-item">' +
-            '<div class="teknik-session-item__row">' +
-            '<span class="teknik-session-item__mins">' +
-            escapeHtml(formatMinutesForDisplay(s.durationMinutes || 0)) +
-            ' dk</span>' +
-            '<span class="teknik-session-item__date">' +
-            escapeHtml(formatSessionDate(sessionEffectiveTime(s))) +
-            "</span></div>" +
-            (metaStr ? '<div class="teknik-session-item__meta">' + metaStr + "</div>" : "") +
-            (s.note
-              ? '<p class="teknik-session-item__note">' + escapeHtml(s.note) + "</p>"
-              : "") +
-            '<button type="button" class="btn btn--ghost btn--small teknik-session-item__del" data-teknik-delete="' +
-            escapeHtml(s.id) +
-            '">Sil</button></li>'
-        );
+      var shown = rows.slice(0, limit);
+      if (countEl) countEl.textContent = String(shown.length);
+      if (shown.length === 0) {
+        listEl.innerHTML = "";
+        if (emptyEl) emptyEl.hidden = false;
+        return;
       }
-      listEl.innerHTML = rows.length
-        ? html.join("")
-        : '<li class="teknik-session-empty">Teknik kayıt yok. <a href="yeni-kayit.html">Kayıt ekle</a> — kategori olarak Teknik seç.</li>';
+      if (emptyEl) emptyEl.hidden = true;
+      listEl.innerHTML = shown.map(function (row) {
+        return renderTeknikSessionItemHtml(row.s);
+      }).join("");
     }
   }
 
@@ -4542,6 +4718,7 @@
     saveState(state);
     renderStats();
     renderList();
+    if (page === "teknik") renderTeknikPage();
     refreshBookInvestPages();
   }
 
@@ -5085,7 +5262,21 @@
     syncCategoryUI();
     syncBookNewFields();
   } else if (page === "gecmis") {
-    el.filterCategory.addEventListener("change", renderList);
+    var gecmisTabs = document.querySelector(".gecmis-cat-tabs");
+    if (gecmisTabs && !gecmisTabs.dataset.bound) {
+      gecmisTabs.dataset.bound = "1";
+      gecmisTabs.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-gecmis-filter]");
+        if (!btn || !gecmisTabs.contains(btn)) return;
+        gecmisTabs.querySelectorAll(".gecmis-cat-tab").forEach(function (tab) {
+          var on = tab === btn;
+          tab.classList.toggle("gecmis-cat-tab--active", on);
+          tab.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        renderList();
+      });
+    }
+    bindGecmisSessionDeletes();
     bindExportClick();
     attachStandardImport();
     renderList();
