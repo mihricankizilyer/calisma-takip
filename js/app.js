@@ -1940,6 +1940,78 @@
     });
   }
 
+  function formatBookTimelineWhen(iso) {
+    if (!iso) return { date: "—", time: "" };
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return { date: "—", time: "" };
+    return {
+      date: d.toLocaleDateString("tr-TR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      time: d.toLocaleTimeString("tr-TR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  }
+
+  function renderBookTimelineSessionHtml(s) {
+    var when = formatBookTimelineWhen(s.createdAt);
+    var pages = sessionPagesRead(s) || 0;
+    var chips =
+      '<span class="book-timeline__chip book-timeline__chip--pages">' +
+      pages +
+      " syf</span>" +
+      '<span class="book-timeline__chip book-timeline__chip--mins">' +
+      formatMinutesForDisplay(s.durationMinutes || 0) +
+      " dk</span>";
+    if (s.finishedBook) {
+      chips +=
+        '<span class="book-timeline__chip book-timeline__chip--done">Kitabı bitirdi</span>';
+    }
+    return (
+      '<li class="book-timeline__item">' +
+      '<div class="book-timeline__rail" aria-hidden="true"><span class="book-timeline__dot"></span></div>' +
+      '<article class="book-timeline__card">' +
+      '<div class="book-timeline__head">' +
+      '<time class="book-timeline__when" datetime="' +
+      escapeHtml(String(s.createdAt || "")) +
+      '">' +
+      '<span class="book-timeline__date">' +
+      escapeHtml(when.date) +
+      "</span>" +
+      (when.time
+        ? '<span class="book-timeline__time">' + escapeHtml(when.time) + "</span>"
+        : "") +
+      "</time>" +
+      '<div class="book-timeline__stats">' +
+      chips +
+      "</div>" +
+      "</div>" +
+      (s.note
+        ? '<p class="book-timeline__note">' + escapeHtml(String(s.note)) + "</p>"
+        : "") +
+      "</article></li>"
+    );
+  }
+
+  function bookBlockProgressHtml(meta, totalP) {
+    if (!meta || meta.totalPages == null || isNaN(meta.totalPages) || meta.totalPages <= 0) {
+      return "";
+    }
+    var pct = Math.min(100, Math.round((totalP / meta.totalPages) * 100));
+    return (
+      '<div class="book-block__progress" role="progressbar" aria-valuenow="' +
+      pct +
+      '" aria-valuemin="0" aria-valuemax="100" aria-label="Okuma ilerlemesi">' +
+      '<div class="book-block__progress-bar" style="width:' +
+      pct +
+      '%"></div></div>'
+    );
+  }
+
   function isoToDateInputValue(iso) {
     if (!iso) return "";
     var d = new Date(iso);
@@ -2472,13 +2544,21 @@
       return;
     }
 
+    bookIdList.sort(function (a, b) {
+      var sa = bookSessionsForId(a);
+      var sb = bookSessionsForId(b);
+      var ta = sa.length ? new Date(sa[sa.length - 1].createdAt).getTime() : 0;
+      var tb = sb.length ? new Date(sb[sb.length - 1].createdAt).getTime() : 0;
+      return tb - ta;
+    });
+
     timelineEl.innerHTML = bookIdList
       .map(function (bid) {
         var title = ids[bid];
         var meta = state.books.filter(function (b) {
           return b.id === bid;
         })[0];
-        var subs = bookSessionsForId(bid);
+        var subs = bookSessionsForId(bid).slice().reverse();
         if (subs.length === 0) {
           return (
             '<div class="book-block book-block--card"><h3 class="book-block__title">' +
@@ -2567,6 +2647,23 @@
           (startShow ? formatDateOnly(startShow) : "—") +
           " → " +
           (endShow ? formatDateOnly(endShow) : "—");
+        var sessionCountLabel = subs.length + " oturum";
+        var summaryChips =
+          '<div class="book-block__chips">' +
+          '<span class="book-block__chip">' +
+          sessionCountLabel +
+          "</span>" +
+          '<span class="book-block__chip book-block__chip--pages">' +
+          pagesSummary +
+          "</span>" +
+          '<span class="book-block__chip book-block__chip--mins">' +
+          totalM +
+          " dk</span>" +
+          '<span class="book-block__chip book-block__chip--range">' +
+          dateRangeLine +
+          "</span>" +
+          "</div>" +
+          bookBlockProgressHtml(meta, totalP);
         var head;
         if (meta) {
           head =
@@ -2579,16 +2676,11 @@
             escapeHtml(meta.title) +
             "</div>" +
             (meta.author
-              ? '<div class="book-block__record-meta">' + escapeHtml(meta.author) + "</div>"
+              ? '<div class="book-block__record-meta book-block__record-meta--author">' +
+                escapeHtml(meta.author) +
+                "</div>"
               : "") +
-            '<div class="book-block__record-meta">' +
-            "<strong>" +
-            pagesSummary +
-            "</strong> · <strong>" +
-            totalM +
-            "</strong> dk · " +
-            dateRangeLine +
-            "</div>" +
+            summaryChips +
             "</div>" +
             '<button type="button" class="book-block__edit-toggle" data-book-toggle-edit="' +
             escapeHtml(bid) +
@@ -2600,37 +2692,29 @@
             metaEdit +
             datesEdit +
             "</div>" +
-            '<ul class="book-timeline">';
+            '<div class="book-block__sessions-head">' +
+            '<h3 class="book-block__sessions-title">Okuma oturumları</h3>' +
+            '<span class="book-block__sessions-count">' +
+            sessionCountLabel +
+            "</span>" +
+            "</div>" +
+            '<ul class="book-timeline book-timeline--rail">';
         } else {
           head =
             '<div class="book-block book-block--card"><h3 class="book-block__title">' +
             escapeHtml(title) +
             "</h3>" +
-            '<p class="book-block__sum">Toplam: <strong>' +
-            pagesSummary +
-            "</strong> · <strong>" +
-            totalM +
-            "</strong> dk</p>" +
+            summaryChips +
             datesEdit +
-            '<ul class="book-timeline">';
+            '<div class="book-block__sessions-head">' +
+            '<h3 class="book-block__sessions-title">Okuma oturumları</h3>' +
+            '<span class="book-block__sessions-count">' +
+            sessionCountLabel +
+            "</span>" +
+            "</div>" +
+            '<ul class="book-timeline book-timeline--rail">';
         }
-        var rows = subs
-          .map(function (s) {
-            return (
-              '<li class="book-timeline__item"><span class="book-timeline__date">' +
-              escapeHtml(formatSessionDate(s.createdAt)) +
-              "</span><span class=\"book-timeline__meta\">" +
-              (sessionPagesRead(s) || 0) +
-              " syf · " +
-              formatMinutesForDisplay(s.durationMinutes || 0) +
-              " dk" +
-              (s.finishedBook ? " · <em>bitirdi</em>" : "") +
-              "</span>" +
-              (s.note ? '<span class="book-timeline__note">' + escapeHtml(String(s.note)) + "</span>" : "") +
-              "</li>"
-            );
-          })
-          .join("");
+        var rows = subs.map(renderBookTimelineSessionHtml).join("");
         return head + rows + "</ul></div>";
       })
       .join("");
