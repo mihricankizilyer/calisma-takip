@@ -1237,19 +1237,24 @@
     return best;
   }
 
-  /** YDS: gün içinde herhangi bir YDS dakikası (>0) varsa o gün seriye sayılır; üst üste boş gün olmamalı. */
-  function ydsStreakDayActive(minutesMap, key) {
+  /** Gün içinde dakika > 0 ise seriye sayılır (YDS, teknik vb.). */
+  function streakDayHasAnyMinutes(minutesMap, key) {
     return (minutesMap[key] || 0) > 0;
   }
 
-  function computeCurrentStreakYds(minutesMap) {
+  function computeCurrentStreakConsecutive(minutesMap, isActiveFn) {
+    if (!isActiveFn) {
+      isActiveFn = function (k) {
+        return streakDayHasAnyMinutes(minutesMap, k);
+      };
+    }
     var now = new Date();
     var todayKey = dateKeyLocal(now);
     var y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
     var yesterdayKey = dateKeyLocal(y);
 
-    var activeToday = ydsStreakDayActive(minutesMap, todayKey);
-    var activeYesterday = ydsStreakDayActive(minutesMap, yesterdayKey);
+    var activeToday = isActiveFn(todayKey);
+    var activeYesterday = isActiveFn(yesterdayKey);
     if (!activeToday && !activeYesterday) return 0;
 
     var start = activeToday ? new Date(now.getFullYear(), now.getMonth(), now.getDate()) : y;
@@ -1257,7 +1262,7 @@
     var cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
     while (true) {
       var k = dateKeyLocal(cursor);
-      if (ydsStreakDayActive(minutesMap, k)) {
+      if (isActiveFn(k)) {
         count += 1;
         cursor.setDate(cursor.getDate() - 1);
       } else break;
@@ -1265,9 +1270,14 @@
     return count;
   }
 
-  function computeLongestStreakYds(minutesMap) {
+  function computeLongestStreakConsecutive(minutesMap, isActiveFn) {
+    if (!isActiveFn) {
+      isActiveFn = function (k) {
+        return streakDayHasAnyMinutes(minutesMap, k);
+      };
+    }
     var keys = Object.keys(minutesMap).filter(function (k) {
-      return ydsStreakDayActive(minutesMap, k);
+      return isActiveFn(k);
     });
     keys.sort();
     if (keys.length === 0) return 0;
@@ -1286,6 +1296,27 @@
       }
     }
     return best;
+  }
+
+  /** YDS: gün içinde herhangi bir YDS dakikası (>0) varsa o gün seriye sayılır; üst üste boş gün olmamalı. */
+  function ydsStreakDayActive(minutesMap, key) {
+    return streakDayHasAnyMinutes(minutesMap, key);
+  }
+
+  function computeCurrentStreakYds(minutesMap) {
+    return computeCurrentStreakConsecutive(minutesMap);
+  }
+
+  function computeLongestStreakYds(minutesMap) {
+    return computeLongestStreakConsecutive(minutesMap);
+  }
+
+  function computeCurrentStreakTechnical(minutesMap) {
+    return computeCurrentStreakConsecutive(minutesMap);
+  }
+
+  function computeLongestStreakTechnical(minutesMap) {
+    return computeLongestStreakConsecutive(minutesMap);
   }
 
   function uid() {
@@ -2524,18 +2555,31 @@
 
   function bookSessionsTabPanelHtml(sessionCount, rowsHtml) {
     return (
-      '<div class="book-block__sessions-tabpanel">' +
-      '<div class="book-block__sessions-tab" aria-hidden="true">' +
+      '<details class="book-block__sessions-tabpanel records-collapsible">' +
+      '<summary class="book-block__sessions-tab records-collapsible__summary">' +
       '<span class="book-block__sessions-tab-label">Okuma oturumları</span>' +
       '<span class="book-block__sessions-tab-count">' +
       sessionCount +
       "</span>" +
-      "</div>" +
+      '<span class="records-collapsible__chev" aria-hidden="true"></span>' +
+      "</summary>" +
       '<div class="book-block__sessions-body">' +
       '<ul class="book-timeline book-timeline--rail">' +
       rowsHtml +
-      "</ul></div></div>"
+      "</ul></div></details>"
     );
+  }
+
+  function bindRecordsCollapsible(el, storageKey) {
+    if (!el || el.dataset.collapsibleBound) return;
+    el.dataset.collapsibleBound = "1";
+    if (storageKey && sessionStorage.getItem(storageKey) === "1") {
+      el.open = true;
+    }
+    if (!storageKey) return;
+    el.addEventListener("toggle", function () {
+      sessionStorage.setItem(storageKey, el.open ? "1" : "0");
+    });
   }
 
   function renderKitaplarBookBlockHtml(bid, ids) {
@@ -3087,20 +3131,81 @@
   function weeklyTechnicalStats() {
     var sessions = 0;
     var minutes = 0;
-    var days = {};
     state.sessions.forEach(function (s) {
       if (String(s.category || "").trim() !== "technical") return;
       var iso = sessionEffectiveTime(s);
       if (!iso || !isInCurrentWeek(iso)) return;
       sessions++;
       minutes += s.durationMinutes || 0;
-      days[dateKeyLocal(new Date(iso))] = true;
     });
     return {
       sessions: sessions,
       minutes: minutes,
-      activeDays: Object.keys(days).length,
     };
+  }
+
+  function renderTeknikStreak() {
+    if (!document.getElementById("teknik-dashboard")) return;
+    var techMap = dayCategoryMapsByEffectiveDate().tech || {};
+    var cur = computeCurrentStreakTechnical(techMap);
+    var best = computeLongestStreakTechnical(techMap);
+    var elCur = document.getElementById("teknik-streak-current");
+    var elBest = document.getElementById("teknik-streak-best");
+    var elMsg = document.getElementById("teknik-streak-today-msg");
+    if (elCur) elCur.textContent = String(cur);
+    if (elBest) elBest.textContent = best + " gün";
+
+    var todayKey = dateKeyLocal(new Date());
+    var todayM = techMap[todayKey] || 0;
+    var yDay = new Date();
+    yDay.setHours(0, 0, 0, 0);
+    yDay.setDate(yDay.getDate() - 1);
+    var yesterdayKey = dateKeyLocal(yDay);
+    var yesterdayM = techMap[yesterdayKey] || 0;
+    if (elMsg) {
+      if (todayM > 0) {
+        elMsg.textContent = "Bugün: " + todayM + " dk";
+        elMsg.className = "teknik-streak-today teknik-streak-today--ok";
+      } else if (yesterdayM > 0) {
+        elMsg.textContent = "Bugün kayıt yok — seri yarın sıfırlanır.";
+        elMsg.className = "teknik-streak-today teknik-streak-today--warn";
+      } else {
+        elMsg.textContent = "";
+        elMsg.className = "teknik-streak-today";
+      }
+    }
+
+    var chainEl = document.getElementById("teknik-chain-row");
+    if (chainEl) {
+      var parts = [];
+      var j;
+      for (j = 6; j >= 0; j--) {
+        var day = new Date();
+        day.setHours(0, 0, 0, 0);
+        day.setDate(day.getDate() - j);
+        var k = dateKeyLocal(day);
+        var mins = techMap[k] || 0;
+        var ok = mins > 0;
+        var isToday = k === todayKey;
+        var c = "teknik-chain-dot";
+        if (ok) c += " teknik-chain-dot--ok";
+        else c += " teknik-chain-dot--empty";
+        if (isToday) c += " teknik-chain-dot--today";
+        var wd = ["Pz", "Sa", "Ça", "Pe", "Cu", "Ct", "Pa"][(day.getDay() + 6) % 7];
+        parts.push(
+          '<div class="' +
+            c +
+            '" title="' +
+            k +
+            ": " +
+            (ok ? mins + " dk" : "kayıt yok") +
+            '"><span class="teknik-chain-dot__wd">' +
+            wd +
+            "</span></div>"
+        );
+      }
+      chainEl.innerHTML = parts.join("");
+    }
   }
 
   function technicalDailySeriesLast14() {
@@ -3134,14 +3239,13 @@
     if (!document.getElementById("teknik-dashboard")) return;
     state = loadState();
     destroyTeknikCharts();
+    renderTeknikStreak();
 
     var weekStats = weeklyTechnicalStats();
     var wk = document.getElementById("teknik-stat-week");
     var wkSessions = document.getElementById("teknik-stat-week-sessions");
-    var wkDays = document.getElementById("teknik-stat-week-days");
     if (wk) wk.textContent = formatMinutesForDisplay(weekStats.minutes);
     if (wkSessions) wkSessions.textContent = String(weekStats.sessions);
-    if (wkDays) wkDays.textContent = String(weekStats.activeDays);
 
     var series14 = technicalDailySeriesLast14();
     var canvasTrend = document.getElementById("teknik-chart-trend");
@@ -5277,6 +5381,7 @@
       });
     }
     bindGecmisSessionDeletes();
+    bindRecordsCollapsible(document.getElementById("gecmis-records-panel"), "gecmisRecordsOpen");
     bindExportClick();
     attachStandardImport();
     renderList();
@@ -5433,6 +5538,7 @@
         deleteSession(sid);
       });
     }
+    bindRecordsCollapsible(document.getElementById("teknik-records-panel"), "teknikRecordsOpen");
     renderTeknikPage();
   } else if (page === "notlarim") {
     bindExportClick();

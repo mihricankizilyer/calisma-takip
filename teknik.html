@@ -51,6 +51,28 @@
       </header>
 
       <div class="shell__content shell__content--teknik" id="teknik-dashboard">
+        <section class="panel panel--teknik-streak" aria-labelledby="teknik-streak-title">
+          <div class="panel__head-row">
+            <h2 id="teknik-streak-title" class="panel__h2">Teknik günlük zincir</h2>
+            <p class="panel__sub">Arka arkaya teknik çalışma</p>
+          </div>
+          <div class="teknik-streak-hero">
+            <div class="teknik-streak-hero__main">
+              <div class="teknik-streak-big">
+                <span class="teknik-streak-big__label">Mevcut seri</span>
+                <span class="teknik-streak-big__n" id="teknik-streak-current">0</span>
+                <span class="teknik-streak-big__unit">gün</span>
+              </div>
+              <div class="teknik-streak-side">
+                <span class="teknik-streak-side__label">En uzun</span>
+                <span class="teknik-streak-side__val" id="teknik-streak-best">0 gün</span>
+              </div>
+            </div>
+            <p class="teknik-streak-today" id="teknik-streak-today-msg" role="status"></p>
+          </div>
+          <div class="teknik-chain" id="teknik-chain-row"></div>
+        </section>
+
         <section class="panel panel--teknik-hero" aria-labelledby="teknik-hero-title">
           <div class="panel__head-row">
             <h2 id="teknik-hero-title" class="panel__h2">Bu hafta</h2>
@@ -64,10 +86,6 @@
             <div class="teknik-hero-stat">
               <span class="teknik-hero-stat__label">Toplam süre</span>
               <strong class="teknik-hero-stat__val"><span id="teknik-stat-week">0</span> dk</strong>
-            </div>
-            <div class="teknik-hero-stat">
-              <span class="teknik-hero-stat__label">Aktif gün</span>
-              <strong class="teknik-hero-stat__val"><span id="teknik-stat-week-days">0</span> gün</strong>
             </div>
           </div>
         </section>
@@ -108,21 +126,22 @@
         <section class="panel panel--teknik-list" aria-labelledby="teknik-list-title">
           <div class="panel__head-row">
             <h2 id="teknik-list-title" class="panel__h2">Son kayıtlar</h2>
-            <p class="panel__sub">En yeni 40 oturum — liste her zaman açık</p>
+            <p class="panel__sub">En yeni 40 oturum — listeyi açıp kapatabilirsin</p>
           </div>
           <div class="teknik-records">
-            <div class="teknik-records-panel">
-              <div class="teknik-records-tab" aria-hidden="true">
+            <details class="teknik-records-panel records-collapsible" id="teknik-records-panel">
+              <summary class="teknik-records-tab records-collapsible__summary">
                 <span class="teknik-records-tab__label">Son kayıtlar</span>
                 <span class="teknik-records-tab__count" id="teknik-records-count">0</span>
-              </div>
+                <span class="records-collapsible__chev" aria-hidden="true"></span>
+              </summary>
               <div class="teknik-records-body">
                 <ul id="teknik-session-list" class="teknik-session-list records-card-list"></ul>
                 <p class="teknik-session-empty" id="teknik-session-empty" hidden>
                   Teknik kayıt yok. <a href="yeni-kayit.html">Kayıt ekle</a> — kategori olarak Teknik seç.
                 </p>
               </div>
-            </div>
+            </details>
           </div>
         </section>
       </div>

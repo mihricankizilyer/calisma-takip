@@ -85,7 +85,7 @@
           <div class="panel__head-row panel__head-row--list">
             <div class="panel__head-text">
               <h2 id="list-title" class="panel__h2">Kayıtlar</h2>
-              <p class="panel__sub">Kategori sekmesi ile süz — oturumlar her zaman açık</p>
+              <p class="panel__sub">Kategori sekmesi ile süz — listeyi açıp kapatabilirsin</p>
             </div>
           </div>
           <div class="gecmis-records">
@@ -96,16 +96,17 @@
               <button type="button" class="gecmis-cat-tab gecmis-cat-tab--book" role="tab" data-gecmis-filter="book" aria-selected="false">Kitap</button>
               <button type="button" class="gecmis-cat-tab gecmis-cat-tab--inv" role="tab" data-gecmis-filter="investment" aria-selected="false">Yatırım</button>
             </div>
-            <div class="gecmis-records-panel">
-              <div class="gecmis-records-tab" aria-hidden="true">
+            <details class="gecmis-records-panel records-collapsible" id="gecmis-records-panel">
+              <summary class="gecmis-records-tab records-collapsible__summary">
                 <span class="gecmis-records-tab__label">Kayıtlar</span>
                 <span class="gecmis-records-tab__count" id="gecmis-records-count">0</span>
-              </div>
+                <span class="records-collapsible__chev" aria-hidden="true"></span>
+              </summary>
               <div class="gecmis-records-body">
                 <ul class="session-list session-list--gecmis records-card-list" id="session-list"></ul>
                 <p class="empty empty--gecmis" id="empty-msg">Kayıt yok. <a href="yeni-kayit.html">Ekle</a></p>
               </div>
-            </div>
+            </details>
           </div>
         </section>
 

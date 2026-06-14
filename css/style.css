@@ -1697,6 +1697,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 0.5rem 0.95rem;
   border: 1px solid rgba(217, 119, 6, 0.22);
   border-bottom: none;
@@ -2631,6 +2634,68 @@ body {
   min-width: 0;
 }
 
+.records-collapsible {
+  min-width: 0;
+}
+
+.records-collapsible__summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.records-collapsible__summary::-webkit-details-marker {
+  display: none;
+}
+
+.records-collapsible__summary::marker {
+  content: "";
+}
+
+.records-collapsible__chev {
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-left: auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+.records-collapsible[open] .records-collapsible__chev {
+  transform: rotate(45deg);
+  margin-top: 0.15rem;
+}
+
+.records-collapsible__summary:focus-visible {
+  outline: 2px solid rgba(13, 148, 136, 0.45);
+  outline-offset: 2px;
+}
+
+.records-collapsible:not([open]) > .records-collapsible__summary.gecmis-records-tab {
+  border-bottom: 1px solid rgba(214, 208, 200, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+
+.records-collapsible:not([open]) > .records-collapsible__summary.teknik-records-tab {
+  border-bottom: 1px solid rgba(124, 58, 237, 0.18);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+
+.records-collapsible:not([open]) > .records-collapsible__summary.book-block__sessions-tab {
+  border-bottom: 1px solid rgba(217, 119, 6, 0.22);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+
+.records-collapsible__summary:hover {
+  filter: brightness(0.98);
+}
+
 .gecmis-cat-tabs {
   display: flex;
   flex-wrap: nowrap;
@@ -2703,6 +2768,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 0.5rem 0.95rem;
   border: 1px solid rgba(214, 208, 200, 0.95);
   border-bottom: none;
@@ -3905,6 +3973,138 @@ body {
 }
 
 /* —— Teknik sayfası —— */
+.shell__content--teknik .panel--teknik-streak {
+  border-top: 3px solid #7c3aed;
+}
+
+.panel--teknik-streak .panel__head-row {
+  margin-bottom: 1rem;
+}
+
+.teknik-streak-hero {
+  margin-bottom: 0.85rem;
+}
+
+.teknik-streak-hero__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.25rem 2rem;
+}
+
+.teknik-streak-big {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.35rem;
+}
+
+.teknik-streak-big__label {
+  flex: 0 0 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.teknik-streak-big__n {
+  font-size: 2.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #5b21b6;
+  line-height: 1;
+}
+
+.teknik-streak-big__unit {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.teknik-streak-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.teknik-streak-side__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.teknik-streak-side__val {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6d28d9;
+}
+
+.teknik-streak-today {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.teknik-streak-today--ok {
+  color: #5b21b6;
+  font-weight: 500;
+}
+
+.teknik-streak-today--warn {
+  color: #9a3412;
+}
+
+.panel--teknik-streak .teknik-chain {
+  margin-top: 0.35rem;
+}
+
+.teknik-chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: flex-start;
+}
+
+.teknik-chain-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 2.25rem;
+}
+
+.teknik-chain-dot__wd {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.teknik-chain-dot::after {
+  content: "";
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+}
+
+.teknik-chain-dot--ok::after {
+  background: linear-gradient(145deg, #c4b5fd, #7c3aed);
+  border-color: #6d28d9;
+}
+
+.teknik-chain-dot--empty::after {
+  opacity: 0.85;
+}
+
+.teknik-chain-dot--today::after {
+  box-shadow: 0 0 0 2px #5b21b6;
+}
+
 .shell__content--teknik .panel--teknik-hero {
   margin-bottom: 1rem;
 }
@@ -3953,6 +4153,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 0.5rem 0.95rem;
   border: 1px solid rgba(124, 58, 237, 0.22);
   border-bottom: none;
