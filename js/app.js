@@ -8,7 +8,7 @@
       examDate: "",
       applicationDate: "",
       chartStartDate: "",
-      programStartDate: "2026-04-06",
+      programStartDate: "",
       targetScore: "",
       weeklyMinutesTarget: 0,
       lastFullMockDate: "",
@@ -78,7 +78,63 @@
       if (_nc) _ncClean.push(_nc);
     }
     data.noteCategories = _ncClean;
+    if (repairBookSessionsInData(data)) data._persistAfterNormalize = true;
     return data;
+  }
+
+  /** Kitap oturumları: sayfa sayısını sayıya çevir, eksik bookId'yi kitap adına göre bağla. */
+  function repairBookSessionsInData(data) {
+    if (!data.sessions || !data.books) return false;
+    var changed = false;
+    data.sessions.forEach(function (s) {
+      if (String(s.category || "").trim() !== "book") return;
+      var pr = parseNonNegInt(s.pagesRead);
+      if (pr > 0 && s.pagesRead !== pr) {
+        s.pagesRead = pr;
+        changed = true;
+      } else if (s.pagesRead != null && String(s.pagesRead).trim() !== "" && pr === 0) {
+        s.pagesRead = 0;
+        changed = true;
+      }
+      var bookIdValid = false;
+      if (s.bookId) {
+        var bi;
+        for (bi = 0; bi < data.books.length; bi++) {
+          if (data.books[bi].id === s.bookId) {
+            bookIdValid = true;
+            break;
+          }
+        }
+      }
+      if (bookIdValid) return;
+      var title = (s.bookTitle || "").trim();
+      if (!title) return;
+      var found = null;
+      var bj;
+      for (bj = 0; bj < data.books.length; bj++) {
+        if (String(data.books[bj].title || "").trim().toLocaleLowerCase("tr") === title.toLocaleLowerCase("tr")) {
+          found = data.books[bj];
+          break;
+        }
+      }
+      if (found) {
+        s.bookId = found.id;
+        changed = true;
+        return;
+      }
+      var nid = uid();
+      data.books.push({
+        id: nid,
+        title: title,
+        author: null,
+        totalPages: null,
+        startedAt: s.createdAt || null,
+        finishedAt: null,
+      });
+      s.bookId = nid;
+      changed = true;
+    });
+    return changed;
   }
 
   function loadState() {
@@ -86,7 +142,13 @@
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return defaultState();
       var data = JSON.parse(raw);
-      return normalizeStateObject(data);
+      data = normalizeStateObject(data);
+      if (data._persistAfterNormalize) {
+        delete data._persistAfterNormalize;
+        persistStateLocal(data);
+        pushStateToServerImmediate(data);
+      }
+      return data;
     } catch (e) {
       return defaultState();
     }
@@ -1267,6 +1329,11 @@
     return isNaN(n) || n < 0 ? 0 : n;
   }
 
+  function sessionPagesRead(s) {
+    if (!s) return 0;
+    return parseNonNegInt(s.pagesRead);
+  }
+
   /** Dakika: hem 12,5 hem 12.5 kabul eder; en fazla 1440, iki ondalık. */
   function parseNonNegMinutes(val) {
     if (val == null) return 0;
@@ -1761,7 +1828,7 @@
     });
     if (found) {
       if (author && !found.author) found.author = author.trim();
-      if (totalPages && !found.totalPages) found.totalPages = totalPages;
+      if (totalPages != null && totalPages >= 1 && !found.totalPages) found.totalPages = totalPages;
       saveState(state);
       return found.id;
     }
@@ -1799,7 +1866,7 @@
   function sumPagesForBook(bookId) {
     var sum = 0;
     state.sessions.forEach(function (s) {
-      if (s.category === "book" && s.bookId === bookId) sum += s.pagesRead || 0;
+      if (s.category === "book" && s.bookId === bookId) sum += sessionPagesRead(s);
     });
     return sum;
   }
@@ -1837,24 +1904,16 @@
   }
 
   function renderStreak() {
-    if (!el.streakCurrent) return;
-    state.yds = mergeYds(state.yds);
-    var ps = programStartDateKey(state.yds);
+    var curEl = document.getElementById("streak-current");
+    var bestEl = document.getElementById("streak-best");
+    if (!curEl) return;
     var maps = dayCategoryMapsByEffectiveDate();
-    var minutesMap = ps ? filterDateKeysFrom(maps.en || {}, ps) : maps.en || {};
+    var minutesMap = maps.en || {};
     var current = computeCurrentStreakYds(minutesMap);
     var longest = computeLongestStreakYds(minutesMap);
 
-    var now = new Date();
-    var todayKey = dateKeyLocal(now);
-    if (ps && todayKey < ps) {
-      el.streakCurrent.textContent = "0";
-      el.streakBest.textContent = "0 gün";
-      return;
-    }
-
-    el.streakCurrent.textContent = String(current);
-    el.streakBest.textContent = longest + " gün";
+    curEl.textContent = String(current);
+    if (bestEl) bestEl.textContent = longest + " gün";
   }
 
   function formatSessionDate(iso) {
@@ -1929,6 +1988,16 @@
       if (!isNaN(d.getTime())) return s.transactionAt;
     }
     return s.createdAt;
+  }
+
+  function applyBookTotalPagesIfProvided(bookId, rawValue) {
+    if (!bookId) return;
+    if (rawValue === undefined || rawValue === null || String(rawValue).trim() === "") return;
+    var n = parseInt(String(rawValue).trim(), 10);
+    if (isNaN(n) || n < 1) return;
+    state.books.forEach(function (b) {
+      if (b.id === bookId) b.totalPages = n;
+    });
   }
 
   function applyBookDatesToBook(bookId, startVal, endVal) {
@@ -2039,7 +2108,7 @@
       }
       if (cat === "book") {
         if (s.bookTitle) metaParts.push(s.bookTitle);
-        if (s.pagesRead != null) metaParts.push(s.pagesRead + " syf");
+        if (s.pagesRead != null) metaParts.push(sessionPagesRead(s) + " syf");
       }
       if (cat === "investment") {
         if (s.assetName) metaParts.push(s.assetName);
@@ -2117,6 +2186,11 @@
     }
     if (ok) sel.value = cur;
     syncBookNewFields();
+    populateBookFieldsFromSelect();
+  }
+
+  function populateBookFieldsFromSelect() {
+    if (!el.bookSelect) return;
     populateBookDateInputs();
   }
 
@@ -2126,6 +2200,7 @@
     if (bid === "new") {
       el.bookDateStart.value = "";
       el.bookDateEnd.value = "";
+      if (el.bookTotalPages) el.bookTotalPages.value = "";
       return;
     }
     var bf = null;
@@ -2135,6 +2210,9 @@
     if (bf) {
       el.bookDateStart.value = isoToDateInputValue(bf.startedAt);
       el.bookDateEnd.value = isoToDateInputValue(bf.finishedAt);
+      if (el.bookTotalPages) {
+        el.bookTotalPages.value = bf.totalPages != null && !isNaN(bf.totalPages) ? String(bf.totalPages) : "";
+      }
     }
   }
 
@@ -2194,7 +2272,7 @@
         if (s.category !== "book") return;
         var t = new Date(sessionEffectiveTime(s));
         if (isNaN(t.getTime()) || t < start || t >= end) return;
-        pages += s.pagesRead || 0;
+        pages += sessionPagesRead(s);
         minutes += s.durationMinutes || 0;
         if (s.bookId) bookIds[s.bookId] = true;
       });
@@ -2410,6 +2488,10 @@
         }
         var totalP = sumPagesForBook(bid);
         var totalM = sumMinutesForBook(bid);
+        var pagesSummary =
+          meta && meta.totalPages != null && !isNaN(meta.totalPages) && meta.totalPages > 0
+            ? totalP + " / " + meta.totalPages + " syf"
+            : totalP + " syf";
         var startShow = meta && meta.startedAt ? meta.startedAt : subs[0] ? subs[0].createdAt : null;
         var endShow = meta && meta.finishedAt ? meta.finishedAt : null;
         var metaEdit =
@@ -2501,8 +2583,8 @@
               : "") +
             '<div class="book-block__record-meta">' +
             "<strong>" +
-            totalP +
-            "</strong> syf · <strong>" +
+            pagesSummary +
+            "</strong> · <strong>" +
             totalM +
             "</strong> dk · " +
             dateRangeLine +
@@ -2525,8 +2607,8 @@
             escapeHtml(title) +
             "</h3>" +
             '<p class="book-block__sum">Toplam: <strong>' +
-            totalP +
-            "</strong> sayfa · <strong>" +
+            pagesSummary +
+            "</strong> · <strong>" +
             totalM +
             "</strong> dk</p>" +
             datesEdit +
@@ -2538,7 +2620,7 @@
               '<li class="book-timeline__item"><span class="book-timeline__date">' +
               escapeHtml(formatSessionDate(s.createdAt)) +
               "</span><span class=\"book-timeline__meta\">" +
-              (s.pagesRead || 0) +
+              (sessionPagesRead(s) || 0) +
               " syf · " +
               formatMinutesForDisplay(s.durationMinutes || 0) +
               " dk" +
@@ -3485,18 +3567,49 @@
     });
   }
 
-  function renderYdsCalendarMonthHtml(y, m, enMap) {
+  function ydsDayActivityFromAgg(agg, dateKey) {
+    var minutes = agg.min[dateKey] || 0;
+    var questions = agg.q[dateKey] || 0;
+    return { minutes: minutes, questions: questions, active: minutes > 0 || questions > 0 };
+  }
+
+  function ydsCalendarCellSummary(act) {
+    if (!act.active) return "";
+    var parts = [];
+    if (act.minutes > 0) parts.push(act.minutes + " dk");
+    if (act.questions > 0) parts.push(act.questions + " soru");
+    return parts.join(" · ");
+  }
+
+  function renderYdsCalendarMonthHtml(y, m, agg) {
     var first = new Date(y, m, 1);
     var startOffset = (first.getDay() + 6) % 7;
     var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var prevMonthDate = new Date(y, m, 0);
+    var prevMonthDays = prevMonthDate.getDate();
+    var prevY = prevMonthDate.getFullYear();
+    var prevM = prevMonthDate.getMonth();
+
     var cells = [];
     var i;
-    for (i = 0; i < startOffset; i++) cells.push({ pad: true });
-    for (i = 1; i <= daysInMonth; i++) cells.push({ pad: false, d: i });
-    var raw = startOffset + daysInMonth;
-    var rows = Math.ceil(raw / 7);
-    var totalCells = rows * 7;
-    while (cells.length < totalCells) cells.push({ pad: true });
+    for (i = 0; i < startOffset; i++) {
+      cells.push({
+        outside: true,
+        y: prevY,
+        m: prevM,
+        d: prevMonthDays - startOffset + 1 + i,
+      });
+    }
+    for (i = 1; i <= daysInMonth; i++) {
+      cells.push({ outside: false, y: y, m: m, d: i });
+    }
+    var nextY = m === 11 ? y + 1 : y;
+    var nextM = m === 11 ? 0 : m + 1;
+    var nextD = 1;
+    while (cells.length % 7 !== 0) {
+      cells.push({ outside: true, y: nextY, m: nextM, d: nextD });
+      nextD += 1;
+    }
 
     var weekdays = ["Pz", "Sa", "Ça", "Pe", "Cu", "Ct", "Pa"];
     var todayKey = dateKeyLocal(new Date());
@@ -3510,38 +3623,34 @@
     html.push('<div class="calendar-grid__cells">');
 
     cells.forEach(function (cell) {
-      if (cell.pad) {
-        html.push('<div class="calendar-cell calendar-cell--pad"></div>');
-        return;
-      }
-      var d = cell.d;
-      var key = dateKeyLocal(new Date(y, m, d));
-      var enM = enMap[key] || 0;
+      var key = dateKeyLocal(new Date(cell.y, cell.m, cell.d));
+      var act = ydsDayActivityFromAgg(agg, key);
       var isToday = key === todayKey;
       var cls = "calendar-cell";
+      if (cell.outside) cls += " calendar-cell--outside";
       if (isToday) cls += " calendar-cell--today";
-      if (enM > 0) cls += " calendar-cell--streak";
-      if (enM === 0) cls += " calendar-cell--zero";
+      if (act.active) cls += " calendar-cell--streak";
+      if (!act.active) cls += " calendar-cell--zero";
+
+      var title = key + ": " + (act.active ? ydsCalendarCellSummary(act) : "kayıt yok");
 
       html.push(
         '<div class="' +
           cls +
           '" title="' +
-          key +
-          ": " +
-          enM +
-          ' dk YDS"><span class="calendar-cell__num">' +
-          d +
+          escapeHtml(title) +
+          '"><span class="calendar-cell__num">' +
+          cell.d +
           "</span>"
       );
 
-      if (enM > 0) {
+      if (act.active) {
         html.push('<div class="calendar-cell__bar">');
         html.push(
           '<span class="calendar-cell__seg calendar-cell__seg--en" style="width:100%"></span>'
         );
         html.push("</div>");
-        html.push('<span class="calendar-cell__total">' + enM + " dk</span>");
+        html.push('<span class="calendar-cell__total">' + escapeHtml(ydsCalendarCellSummary(act)) + "</span>");
       } else {
         html.push('<span class="calendar-cell__dash">—</span>');
       }
@@ -3557,10 +3666,9 @@
     if (!document.getElementById("yds-dashboard")) return;
 
     state = loadState();
-    state.yds = mergeYds(state.yds);
-    var ps = programStartDateKey(state.yds);
     var maps = dayCategoryMapsByEffectiveDate();
-    var enMap = ps ? filterDateKeysFrom(maps.en || {}, ps) : maps.en || {};
+    var enMap = maps.en || {};
+    var ydsAgg = englishDayAggregatesFromState();
 
     var cur = computeCurrentStreakYds(enMap);
     var best = computeLongestStreakYds(enMap);
@@ -3578,10 +3686,7 @@
     var yesterdayKey = dateKeyLocal(yDay);
     var yesterdayM = enMap[yesterdayKey] || 0;
     if (elMsg) {
-      if (ps && todayKey < ps) {
-        elMsg.textContent = "";
-        elMsg.className = "yds-streak-today";
-      } else if (todayM > 0) {
+      if (todayM > 0) {
         elMsg.textContent = "Bugün: " + todayM + " dk";
         elMsg.className = "yds-streak-today yds-streak-today--ok";
       } else if (yesterdayM > 0) {
@@ -3602,8 +3707,8 @@
         day.setHours(0, 0, 0, 0);
         day.setDate(day.getDate() - j);
         var k = dateKeyLocal(day);
-        var em = enMap[k] || 0;
-        var ok = em > 0;
+        var act = ydsDayActivityFromAgg(ydsAgg, k);
+        var ok = act.active;
         var isToday = k === todayKey;
         var c = "yds-chain-dot";
         if (ok) c += " yds-chain-dot--ok";
@@ -3616,8 +3721,8 @@
             '" title="' +
             k +
             ": " +
-            em +
-            ' dk"><span class="yds-chain-dot__wd">' +
+            (act.active ? ydsCalendarCellSummary(act) : "kayıt yok") +
+            '"><span class="yds-chain-dot__wd">' +
             wd +
             "</span></div>"
         );
@@ -3634,7 +3739,7 @@
       });
     }
     if (calRoot) {
-      calRoot.innerHTML = renderYdsCalendarMonthHtml(ydsCalView.y, ydsCalView.m, enMap);
+      calRoot.innerHTML = renderYdsCalendarMonthHtml(ydsCalView.y, ydsCalView.m, ydsAgg);
     }
 
     var canvas = document.getElementById("yds-chart-trend");
@@ -4016,33 +4121,44 @@
     if (!root || root.dataset.ydsBound) return;
     root.dataset.ydsBound = "1";
 
-    function persistField() {
+    function persistYdsField(fieldId) {
       state = loadState();
       state.yds = mergeYds(state.yds);
       var y = state.yds;
-      var examIn = document.getElementById("yds-exam-date");
-      if (examIn) y.examDate = examIn.value.trim();
-      var scoreIn = document.getElementById("yds-target-score");
-      if (scoreIn) y.targetScore = scoreIn.value.trim();
-      var appIn = document.getElementById("yds-application-date");
-      if (appIn) y.applicationDate = appIn.value.trim();
-      var chartStartIn = document.getElementById("yds-chart-start-date");
-      if (chartStartIn) y.chartStartDate = chartStartIn.value.trim();
-      var programStartIn = document.getElementById("yds-program-start-date");
-      if (programStartIn) y.programStartDate = programStartIn.value.trim();
+      if (fieldId === "yds-exam-date") {
+        var examIn = document.getElementById("yds-exam-date");
+        if (examIn) y.examDate = examIn.value.trim();
+      } else if (fieldId === "yds-target-score") {
+        var scoreIn = document.getElementById("yds-target-score");
+        if (scoreIn) y.targetScore = scoreIn.value.trim();
+      } else if (fieldId === "yds-application-date") {
+        var appIn = document.getElementById("yds-application-date");
+        if (appIn) y.applicationDate = appIn.value.trim();
+      } else if (fieldId === "yds-chart-start-date") {
+        var chartStartIn = document.getElementById("yds-chart-start-date");
+        if (chartStartIn) y.chartStartDate = chartStartIn.value.trim();
+      } else if (fieldId === "yds-program-start-date") {
+        var programStartIn = document.getElementById("yds-program-start-date");
+        if (programStartIn) y.programStartDate = programStartIn.value.trim();
+      }
       state.yds = y;
       saveState(state);
       ydsExamDateEditing = false;
       ydsScoreEditing = false;
       ydsApplicationEditing = false;
       renderYdsPage();
+      renderStreak();
     }
 
     ["yds-exam-date", "yds-target-score", "yds-application-date", "yds-chart-start-date", "yds-program-start-date"].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) {
-        el.addEventListener("change", persistField);
-        el.addEventListener("blur", persistField);
+      var elField = document.getElementById(id);
+      if (elField) {
+        elField.addEventListener("change", function () {
+          persistYdsField(id);
+        });
+        elField.addEventListener("blur", function () {
+          persistYdsField(id);
+        });
       }
     });
 
@@ -4808,6 +4924,7 @@
             if (b.id === bid) bf = b;
           });
           bookTitle = bf ? bf.title : el.bookTitleNew.value.trim();
+          applyBookTotalPagesIfProvided(bookId, el.bookTotalPages && el.bookTotalPages.value);
         } else {
           bookTitle = el.bookTitleNew.value.trim();
           if (!bookTitle) {
@@ -4860,10 +4977,13 @@
       if (el.bookTitleNew) el.bookTitleNew.value = "";
       if (el.bookAuthor) el.bookAuthor.value = "";
       if (el.bookPagesRead) el.bookPagesRead.value = "";
-      if (el.bookTotalPages) el.bookTotalPages.value = "";
       if (el.bookFinished) el.bookFinished.checked = false;
-      if (el.bookDateStart) el.bookDateStart.value = "";
-      if (el.bookDateEnd) el.bookDateEnd.value = "";
+      if (cat === "book") populateBookFieldsFromSelect();
+      else {
+        if (el.bookTotalPages) el.bookTotalPages.value = "";
+        if (el.bookDateStart) el.bookDateStart.value = "";
+        if (el.bookDateEnd) el.bookDateEnd.value = "";
+      }
       if (el.investAsset) el.investAsset.value = "";
       if (el.investAmount) el.investAmount.value = "";
       if (el.investSharePrice) el.investSharePrice.value = "";

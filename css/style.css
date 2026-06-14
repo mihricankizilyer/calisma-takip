@@ -812,6 +812,26 @@ body {
   pointer-events: none;
 }
 
+.calendar-cell--outside {
+  opacity: 0.72;
+  background: var(--surface);
+}
+
+.calendar-cell--outside .calendar-cell__num {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.calendar-cell--outside.calendar-cell--streak {
+  opacity: 1;
+  border-color: var(--streak);
+}
+
+.calendar-cell--outside.calendar-cell--streak .calendar-cell__num {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .calendar-cell--today {
   box-shadow: 0 0 0 2px var(--text);
 }
