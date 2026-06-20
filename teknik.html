@@ -51,28 +51,6 @@
       </header>
 
       <div class="shell__content shell__content--teknik" id="teknik-dashboard">
-        <section class="panel panel--teknik-streak" aria-labelledby="teknik-streak-title">
-          <div class="panel__head-row">
-            <h2 id="teknik-streak-title" class="panel__h2">Teknik günlük zincir</h2>
-            <p class="panel__sub">Arka arkaya teknik çalışma</p>
-          </div>
-          <div class="teknik-streak-hero">
-            <div class="teknik-streak-hero__main">
-              <div class="teknik-streak-big">
-                <span class="teknik-streak-big__label">Mevcut seri</span>
-                <span class="teknik-streak-big__n" id="teknik-streak-current">0</span>
-                <span class="teknik-streak-big__unit">gün</span>
-              </div>
-              <div class="teknik-streak-side">
-                <span class="teknik-streak-side__label">En uzun</span>
-                <span class="teknik-streak-side__val" id="teknik-streak-best">0 gün</span>
-              </div>
-            </div>
-            <p class="teknik-streak-today" id="teknik-streak-today-msg" role="status"></p>
-          </div>
-          <div class="teknik-chain" id="teknik-chain-row"></div>
-        </section>
-
         <section class="panel panel--teknik-hero" aria-labelledby="teknik-hero-title">
           <div class="panel__head-row">
             <h2 id="teknik-hero-title" class="panel__h2">Bu hafta</h2>
@@ -80,24 +58,20 @@
           </div>
           <div class="teknik-hero-stats">
             <div class="teknik-hero-stat">
-              <span class="teknik-hero-stat__label">Oturum sayısı</span>
-              <strong class="teknik-hero-stat__val"><span id="teknik-stat-week-sessions">0</span></strong>
-            </div>
-            <div class="teknik-hero-stat">
               <span class="teknik-hero-stat__label">Toplam süre</span>
               <strong class="teknik-hero-stat__val"><span id="teknik-stat-week">0</span> dk</strong>
             </div>
           </div>
         </section>
 
-        <section class="panel panel--teknik-chart" aria-labelledby="teknik-count-title">
+        <section class="panel panel--teknik-chart" aria-labelledby="teknik-weekday-title">
           <div class="panel__head-row">
-            <h2 id="teknik-count-title" class="panel__h2">Oturum sıklığı</h2>
-            <p class="panel__sub">Son 14 gün — günde kaç teknik oturum (alışkanlık takibi)</p>
+            <h2 id="teknik-weekday-title" class="panel__h2">Haftanın günlerine göre</h2>
+            <p class="panel__sub">Tüm zamanlar — hangi günler daha çok teknik çalışıyorsun</p>
           </div>
-          <p class="chart-empty teknik-chart-empty" id="teknik-chart-count-empty" hidden>Kayıt yok.</p>
-          <div class="chart-card__canvas-wrap teknik-chart-wrap" id="teknik-chart-count-wrap">
-            <canvas id="teknik-chart-count" role="img" aria-label="Son on dört gün teknik oturum sayısı grafiği"></canvas>
+          <p class="chart-empty teknik-chart-empty" id="teknik-chart-weekday-empty" hidden>Kayıt yok.</p>
+          <div class="chart-card__canvas-wrap teknik-chart-wrap" id="teknik-chart-weekday-wrap">
+            <canvas id="teknik-chart-weekday" role="img" aria-label="Haftanın günlerine göre teknik çalışma süresi"></canvas>
           </div>
         </section>
 

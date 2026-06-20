@@ -703,7 +703,7 @@
   var dashboardChartWeek = null;
   var dashboardChartDaily = null;
   var dashboardChartWeekCompare = null;
-  var dashboardChartGoals = null;
+  var dashboardChartTrend = null;
   var gecmisChart8Week = null;
 
   function destroyDashboardIndexCharts() {
@@ -712,9 +712,9 @@
       dashboardChartWeekCompare.destroy();
       dashboardChartWeekCompare = null;
     }
-    if (dashboardChartGoals) {
-      dashboardChartGoals.destroy();
-      dashboardChartGoals = null;
+    if (dashboardChartTrend) {
+      dashboardChartTrend.destroy();
+      dashboardChartTrend = null;
     }
   }
 
@@ -793,26 +793,49 @@
               {
                 data: dataW,
                 backgroundColor: colorsW,
-                borderWidth: 0,
+                borderColor: "#ffffff",
+                borderWidth: 3,
+                borderRadius: 6,
+                hoverOffset: 8,
+                spacing: 2,
               },
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: "58%",
+            cutout: "64%",
+            layout: { padding: 6 },
             plugins: {
               legend: {
                 position: "bottom",
-                labels: { boxWidth: 12, padding: 10, font: { size: 11 } },
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: "circle",
+                  boxWidth: 8,
+                  boxHeight: 8,
+                  padding: 14,
+                  font: { size: 12 },
+                  color: "#334155",
+                },
               },
               tooltip: {
+                usePointStyle: true,
+                padding: 12,
+                backgroundColor: "rgba(15,23,42,0.92)",
+                titleFont: { size: 13, weight: "600" },
+                bodyFont: { size: 12 },
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.raw != null ? ctx.raw : 0;
                     var lb = ctx.label || "";
-                    if (lb === "Yatırım") return "Yatırım: " + v + " işlem";
-                    return lb + ": " + v + " dk";
+                    var arr = ctx.dataset.data || [];
+                    var tot = 0;
+                    var qi;
+                    for (qi = 0; qi < arr.length; qi++) tot += arr[qi] || 0;
+                    var pct = tot > 0 ? Math.round((v / tot) * 100) : 0;
+                    if (lb === "Yatırım") return "  Yatırım: " + v + " işlem (" + pct + "%)";
+                    return "  " + lb + ": " + v + " dk (" + pct + "%)";
                   },
                 },
               },
@@ -857,21 +880,34 @@
           data: {
             labels: labels7,
             datasets: [
-              { label: "YDS", data: dEn, backgroundColor: "#0d9488", borderWidth: 0 },
-              { label: "Teknik", data: dTech, backgroundColor: "#7c3aed", borderWidth: 0 },
-              { label: "Kitap", data: dBook, backgroundColor: "#d97706", borderWidth: 0 },
-              { label: "Yatırım", data: dInv, backgroundColor: "#2563eb", borderWidth: 0 },
+              { label: "YDS", data: dEn, backgroundColor: "#0d9488", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
+              { label: "Teknik", data: dTech, backgroundColor: "#7c3aed", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
+              { label: "Kitap", data: dBook, backgroundColor: "#d97706", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
+              { label: "Yatırım", data: dInv, backgroundColor: "#2563eb", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 8 } },
+            interaction: { mode: "index", intersect: false },
             scales: {
-              x: { stacked: true, grid: { display: false } },
+              x: {
+                stacked: true,
+                grid: { display: false },
+                border: { display: false },
+                ticks: { font: { size: 11 }, color: "#475569" },
+              },
               y: {
                 stacked: true,
                 beginAtZero: true,
+                border: { display: false },
+                grid: { color: "rgba(148,163,184,0.18)" },
                 ticks: {
+                  color: "#94a3b8",
+                  font: { size: 11 },
+                  padding: 6,
+                  maxTicksLimit: 5,
                   callback: function (val) {
                     return String(val);
                   },
@@ -879,16 +915,31 @@
               },
             },
             plugins: {
-              legend: { position: "bottom", labels: { boxWidth: 12, padding: 8, font: { size: 11 } } },
+              legend: {
+                position: "bottom",
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: "circle",
+                  boxWidth: 8,
+                  boxHeight: 8,
+                  padding: 14,
+                  font: { size: 12 },
+                  color: "#334155",
+                },
+              },
               tooltip: {
-                mode: "index",
-                intersect: false,
+                usePointStyle: true,
+                padding: 12,
+                backgroundColor: "rgba(15,23,42,0.92)",
+                titleFont: { size: 13, weight: "600" },
+                bodyFont: { size: 12 },
                 callbacks: {
                   label: function (context) {
                     var label = context.dataset.label || "";
                     var v = context.parsed.y != null ? context.parsed.y : 0;
-                    if (label === "Yatırım") return label + ": " + v + " işlem";
-                    return label + ": " + v + " dk";
+                    if (v === 0) return null;
+                    if (label === "Yatırım") return "  " + label + ": " + v + " işlem";
+                    return "  " + label + ": " + v + " dk";
                   },
                 },
               },
@@ -934,21 +985,34 @@
           data: {
             labels: labels8,
             datasets: [
-              { label: "YDS", data: wEn, backgroundColor: "#0d9488", borderWidth: 0 },
-              { label: "Teknik", data: wTech, backgroundColor: "#7c3aed", borderWidth: 0 },
-              { label: "Kitap", data: wBook, backgroundColor: "#d97706", borderWidth: 0 },
-              { label: "Yatırım", data: wInv, backgroundColor: "#2563eb", borderWidth: 0 },
+              { label: "YDS", data: wEn, backgroundColor: "#0d9488", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "Teknik", data: wTech, backgroundColor: "#7c3aed", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "Kitap", data: wBook, backgroundColor: "#d97706", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "Yatırım", data: wInv, backgroundColor: "#2563eb", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 8 } },
+            interaction: { mode: "index", intersect: false },
             scales: {
-              x: { stacked: true, grid: { display: false } },
+              x: {
+                stacked: true,
+                grid: { display: false },
+                border: { display: false },
+                ticks: { font: { size: 11 }, color: "#475569" },
+              },
               y: {
                 stacked: true,
                 beginAtZero: true,
+                border: { display: false },
+                grid: { color: "rgba(148,163,184,0.18)" },
                 ticks: {
+                  color: "#94a3b8",
+                  font: { size: 11 },
+                  padding: 6,
+                  maxTicksLimit: 6,
                   callback: function (val) {
                     return String(val);
                   },
@@ -956,16 +1020,31 @@
               },
             },
             plugins: {
-              legend: { position: "bottom", labels: { boxWidth: 12, padding: 8, font: { size: 11 } } },
+              legend: {
+                position: "bottom",
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: "circle",
+                  boxWidth: 8,
+                  boxHeight: 8,
+                  padding: 14,
+                  font: { size: 12 },
+                  color: "#334155",
+                },
+              },
               tooltip: {
-                mode: "index",
-                intersect: false,
+                usePointStyle: true,
+                padding: 12,
+                backgroundColor: "rgba(15,23,42,0.92)",
+                titleFont: { size: 13, weight: "600" },
+                bodyFont: { size: 12 },
                 callbacks: {
                   label: function (context) {
                     var label = context.dataset.label || "";
                     var v = context.parsed.y != null ? context.parsed.y : 0;
-                    if (label === "Yatırım") return label + ": " + v + " işlem";
-                    return label + ": " + v + " dk";
+                    if (v === 0) return null;
+                    if (label === "Yatırım") return "  " + label + ": " + v + " işlem";
+                    return "  " + label + ": " + v + " dk";
                   },
                 },
               },
@@ -979,8 +1058,8 @@
   function renderDashboardIndexCharts() {
     if (page !== "dashboard") return;
     var cCmp = document.getElementById("dashboard-chart-week-compare");
-    var cGoals = document.getElementById("dashboard-chart-goals");
-    if (!cCmp && !cGoals) return;
+    var cTrend = document.getElementById("dashboard-chart-trend");
+    if (!cCmp && !cTrend) return;
     state = loadState();
     destroyDashboardIndexCharts();
     if (typeof Chart === "undefined") return;
@@ -1006,25 +1085,47 @@
               {
                 label: "Bu hafta",
                 data: [thisW.en, thisW.tech, thisW.book, thisW.inv],
-                backgroundColor: "#0f766e",
+                backgroundColor: "#0d9488",
+                hoverBackgroundColor: "#0f766e",
                 borderWidth: 0,
+                borderRadius: 6,
+                borderSkipped: false,
+                maxBarThickness: 34,
               },
               {
                 label: "Geçen hafta",
                 data: [prevW.en, prevW.tech, prevW.book, prevW.inv],
-                backgroundColor: "#94a3b8",
+                backgroundColor: "#cbd5e1",
+                hoverBackgroundColor: "#94a3b8",
                 borderWidth: 0,
+                borderRadius: 6,
+                borderSkipped: false,
+                maxBarThickness: 34,
               },
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 8 } },
+            categoryPercentage: 0.62,
+            barPercentage: 0.9,
+            interaction: { mode: "index", intersect: false },
             scales: {
-              x: { grid: { display: false } },
+              x: {
+                grid: { display: false },
+                border: { display: false },
+                ticks: { font: { size: 12, weight: "500" }, color: "#475569" },
+              },
               y: {
                 beginAtZero: true,
+                border: { display: false },
+                grid: { color: "rgba(148,163,184,0.18)" },
                 ticks: {
+                  color: "#94a3b8",
+                  font: { size: 11 },
+                  padding: 6,
+                  maxTicksLimit: 5,
                   callback: function (val) {
                     return String(val);
                   },
@@ -1032,15 +1133,50 @@
               },
             },
             plugins: {
-              legend: { position: "bottom", labels: { boxWidth: 12, padding: 8, font: { size: 11 } } },
+              legend: {
+                position: "top",
+                align: "end",
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: "circle",
+                  boxWidth: 8,
+                  boxHeight: 8,
+                  padding: 14,
+                  font: { size: 12 },
+                  color: "#334155",
+                },
+              },
               tooltip: {
+                usePointStyle: true,
+                padding: 12,
+                backgroundColor: "rgba(15,23,42,0.92)",
+                titleFont: { size: 13, weight: "600" },
+                bodyFont: { size: 12 },
+                bodySpacing: 6,
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.raw != null ? ctx.raw : 0;
                     var lb = ctx.dataset.label || "";
                     var cat = ctx.label || "";
-                    if (cat === "Yatırım") return lb + " · " + cat + ": " + v + " işlem";
-                    return lb + " · " + cat + ": " + v + " dk";
+                    var unit = cat === "Yatırım" ? " işlem" : " dk";
+                    return "  " + lb + ": " + v + unit;
+                  },
+                  footer: function (items) {
+                    if (!items || !items.length) return "";
+                    var idx = items[0].dataIndex;
+                    var cat = items[0].label || "";
+                    var cur = [thisW.en, thisW.tech, thisW.book, thisW.inv][idx] || 0;
+                    var prev = [prevW.en, prevW.tech, prevW.book, prevW.inv][idx] || 0;
+                    var diff = cur - prev;
+                    if (cat === "Yatırım") {
+                      if (diff === 0) return "Değişim yok";
+                      return (diff > 0 ? "▲ +" : "▼ ") + diff + " işlem";
+                    }
+                    if (prev === 0 && cur === 0) return "Kayıt yok";
+                    if (prev === 0) return "▲ Yeni (+" + cur + " dk)";
+                    var pct = Math.round((diff / prev) * 100);
+                    if (diff === 0) return "Geçen haftayla aynı";
+                    return (diff > 0 ? "▲ +" : "▼ ") + diff + " dk (" + (pct > 0 ? "+" : "") + pct + "%)";
                   },
                 },
               },
@@ -1050,38 +1186,80 @@
       }
     }
 
-    if (cGoals) {
-      var cardG = cGoals.closest(".chart-card");
-      var gEn = Math.max(0, Number(state.goals && state.goals.weeklyMinutesEnglish) || 0);
-      var gTech = Math.max(0, Number(state.goals && state.goals.weeklyMinutesTechnical) || 0);
-      var act = weeklyMinutes();
-      var goalsChartSum = gEn + gTech + act.en + act.tech;
-      if (goalsChartSum <= 0) {
-        toggleChartCardEmpty(cardG, true, "Hedef veya bu hafta YDS/Teknik süresi yok.");
+    if (cTrend) {
+      var cardT = cTrend.closest(".chart-card");
+      var endWT = startOfWeekMonday(new Date());
+      var labelsT = [];
+      var trEn = [];
+      var trTech = [];
+      var trBook = [];
+      var trTotal = [];
+      var ti;
+      for (ti = 7; ti >= 0; ti--) {
+        var monT = new Date(endWT);
+        monT.setDate(monT.getDate() - ti * 7);
+        var wT = weeklyStudyWeightsMonday(monT);
+        labelsT.push(monT.getDate() + " " + MONTH_SHORT_TR[monT.getMonth()]);
+        trEn.push(wT.en);
+        trTech.push(wT.tech);
+        trBook.push(wT.book);
+        trTotal.push(wT.en + wT.tech + wT.book);
+      }
+      var trendSum = 0;
+      for (ti = 0; ti < trTotal.length; ti++) trendSum += trTotal[ti];
+      if (trendSum <= 0) {
+        toggleChartCardEmpty(cardT, true, "Son 8 haftada çalışma kaydı yok.");
       } else {
-        toggleChartCardEmpty(cardG, false, "");
-        dashboardChartGoals = new Chart(cGoals, {
-          type: "bar",
+        toggleChartCardEmpty(cardT, false, "");
+        dashboardChartTrend = new Chart(cTrend, {
+          type: "line",
           data: {
-            labels: ["YDS", "Teknik"],
+            labels: labelsT,
             datasets: [
               {
-                label: "Hedef (haftalık dk)",
-                data: [gEn, gTech],
-                backgroundColor: "#cbd5e1",
-                borderWidth: 0,
+                label: "Toplam",
+                data: trTotal,
+                borderColor: "#0f766e",
+                backgroundColor: "rgba(15,118,110,0.12)",
+                borderWidth: 2,
+                fill: true,
+                tension: 0.35,
+                pointRadius: 3,
+                pointBackgroundColor: "#0f766e",
               },
               {
-                label: "Bu hafta (dk)",
-                data: [act.en, act.tech],
-                backgroundColor: ["#0d9488", "#7c3aed"],
-                borderWidth: 0,
+                label: "YDS",
+                data: trEn,
+                borderColor: "#0d9488",
+                backgroundColor: "transparent",
+                borderWidth: 1.5,
+                tension: 0.35,
+                pointRadius: 0,
+              },
+              {
+                label: "Teknik",
+                data: trTech,
+                borderColor: "#7c3aed",
+                backgroundColor: "transparent",
+                borderWidth: 1.5,
+                tension: 0.35,
+                pointRadius: 0,
+              },
+              {
+                label: "Kitap",
+                data: trBook,
+                borderColor: "#d97706",
+                backgroundColor: "transparent",
+                borderWidth: 1.5,
+                tension: 0.35,
+                pointRadius: 0,
               },
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
             scales: {
               x: { grid: { display: false } },
               y: {
@@ -1095,6 +1273,14 @@
             },
             plugins: {
               legend: { position: "bottom", labels: { boxWidth: 12, padding: 8, font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
+                    return (ctx.dataset.label || "") + ": " + v + " dk";
+                  },
+                },
+              },
             },
           },
         });
@@ -1552,7 +1738,7 @@
   var ydsSubtypeChart = null;
   var ydsCumulativeChart = null;
   var teknikTrendChart = null;
-  var teknikCountChart = null;
+  var teknikWeekdayChart = null;
   var teknikTopicChart = null;
 
   var timerElapsedSec = 0;
@@ -2473,9 +2659,22 @@
     var yearWhen = String(now.getFullYear());
     var weekWhen = formatKitaplarWeekRange(wStart);
 
-    function statCard(periodClass, kindLine, whenLine, d) {
+    function formatDaysEquivalent(minutes) {
+      var days = minutes / 1440;
+      if (days <= 0) return "0 gün";
+      var rounded = Math.round(days * 10) / 10;
+      var str = rounded % 1 === 0 ? String(rounded) : rounded.toFixed(1).replace(".", ",");
+      return str + " gün";
+    }
+
+    function statCard(periodClass, kindLine, whenLine, d, showDaysEq) {
       var aria = kindLine + ": " + whenLine;
       var al = escapeHtml(aria);
+      var daysMetric = showDaysEq
+        ? '<div class="kitaplar-stat-metric"><dt>≈ Gün (24 sa)</dt><dd>' +
+          formatDaysEquivalent(d.minutes) +
+          "</dd></div>"
+        : "";
       return (
         '<article class="kitaplar-stat-card kitaplar-stat-card--' +
         periodClass +
@@ -2499,6 +2698,7 @@
         '<div class="kitaplar-stat-metric"><dt>Süre</dt><dd>' +
         d.minutes +
         " dk</dd></div>" +
+        daysMetric +
         '<div class="kitaplar-stat-metric"><dt>Kitap</dt><dd>' +
         d.bookCount +
         "</dd></div>" +
@@ -2507,9 +2707,9 @@
     }
 
     grid.innerHTML =
-      statCard("week", "Hafta", weekWhen, w) +
-      statCard("month", "Ay", monthWhen, mo) +
-      statCard("year", "Yıl", yearWhen, y);
+      statCard("week", "Hafta", weekWhen, w, false) +
+      statCard("month", "Ay", monthWhen, mo, false) +
+      statCard("year", "Yıl", yearWhen, y, true);
   }
 
   function bookSessionsTabPanelHtml(sessionCount, rowsHtml) {
@@ -2777,12 +2977,18 @@
         .join("");
     }
 
+    var finishedIds = {};
+    state.books.forEach(function (b) {
+      if (b.finishedAt) finishedIds[b.id] = true;
+    });
+
     var ids = {};
     state.books.forEach(function (b) {
+      if (finishedIds[b.id]) return;
       ids[b.id] = b.title;
     });
     state.sessions.forEach(function (s) {
-      if (s.category === "book" && s.bookId) {
+      if (s.category === "book" && s.bookId && !finishedIds[s.bookId]) {
         ids[s.bookId] = ids[s.bookId] || s.bookTitle || "Kitap";
       }
     });
@@ -2790,7 +2996,7 @@
     var bookIdList = Object.keys(ids);
     if (bookIdList.length === 0) {
       timelineEl.innerHTML =
-        '<p class="kitaplar-timeline-empty">Kayıt yok. <a href="yeni-kayit.html">Okuma ekle</a></p>';
+        '<p class="kitaplar-timeline-empty">Okunmakta olan kitap yok. Bitirilen kitaplar yukarıdaki tabloda listelenir.</p>';
       return;
     }
 
@@ -3073,9 +3279,9 @@
       teknikTrendChart.destroy();
       teknikTrendChart = null;
     }
-    if (teknikCountChart) {
-      teknikCountChart.destroy();
-      teknikCountChart = null;
+    if (teknikWeekdayChart) {
+      teknikWeekdayChart.destroy();
+      teknikWeekdayChart = null;
     }
     if (teknikTopicChart) {
       teknikTopicChart.destroy();
@@ -3101,70 +3307,6 @@
       sessions: sessions,
       minutes: minutes,
     };
-  }
-
-  function renderTeknikStreak() {
-    if (!document.getElementById("teknik-dashboard")) return;
-    var techMap = dayCategoryMapsByEffectiveDate().tech || {};
-    var cur = computeCurrentStreakTechnical(techMap);
-    var best = computeLongestStreakTechnical(techMap);
-    var elCur = document.getElementById("teknik-streak-current");
-    var elBest = document.getElementById("teknik-streak-best");
-    var elMsg = document.getElementById("teknik-streak-today-msg");
-    if (elCur) elCur.textContent = String(cur);
-    if (elBest) elBest.textContent = best + " gün";
-
-    var todayKey = dateKeyLocal(new Date());
-    var todayM = techMap[todayKey] || 0;
-    var yDay = new Date();
-    yDay.setHours(0, 0, 0, 0);
-    yDay.setDate(yDay.getDate() - 1);
-    var yesterdayKey = dateKeyLocal(yDay);
-    var yesterdayM = techMap[yesterdayKey] || 0;
-    if (elMsg) {
-      if (todayM > 0) {
-        elMsg.textContent = "Bugün: " + todayM + " dk";
-        elMsg.className = "teknik-streak-today teknik-streak-today--ok";
-      } else if (yesterdayM > 0) {
-        elMsg.textContent = "Bugün kayıt yok — seri yarın sıfırlanır.";
-        elMsg.className = "teknik-streak-today teknik-streak-today--warn";
-      } else {
-        elMsg.textContent = "";
-        elMsg.className = "teknik-streak-today";
-      }
-    }
-
-    var chainEl = document.getElementById("teknik-chain-row");
-    if (chainEl) {
-      var parts = [];
-      var j;
-      for (j = 6; j >= 0; j--) {
-        var day = new Date();
-        day.setHours(0, 0, 0, 0);
-        day.setDate(day.getDate() - j);
-        var k = dateKeyLocal(day);
-        var mins = techMap[k] || 0;
-        var ok = mins > 0;
-        var isToday = k === todayKey;
-        var c = "teknik-chain-dot";
-        if (ok) c += " teknik-chain-dot--ok";
-        else c += " teknik-chain-dot--empty";
-        if (isToday) c += " teknik-chain-dot--today";
-        var wd = ["Pz", "Sa", "Ça", "Pe", "Cu", "Ct", "Pa"][(day.getDay() + 6) % 7];
-        parts.push(
-          '<div class="' +
-            c +
-            '" title="' +
-            k +
-            ": " +
-            (ok ? mins + " dk" : "kayıt yok") +
-            '"><span class="teknik-chain-dot__wd">' +
-            wd +
-            "</span></div>"
-        );
-      }
-      chainEl.innerHTML = parts.join("");
-    }
   }
 
   function technicalDailySeriesLast14() {
@@ -3198,13 +3340,10 @@
     if (!document.getElementById("teknik-dashboard")) return;
     state = loadState();
     destroyTeknikCharts();
-    renderTeknikStreak();
 
     var weekStats = weeklyTechnicalStats();
     var wk = document.getElementById("teknik-stat-week");
-    var wkSessions = document.getElementById("teknik-stat-week-sessions");
     if (wk) wk.textContent = formatMinutesForDisplay(weekStats.minutes);
-    if (wkSessions) wkSessions.textContent = String(weekStats.sessions);
 
     var series14 = technicalDailySeriesLast14();
     var canvasTrend = document.getElementById("teknik-chart-trend");
@@ -3277,37 +3416,46 @@
       }
     }
 
-    var canvasCount = document.getElementById("teknik-chart-count");
-    var emptyCount = document.getElementById("teknik-chart-count-empty");
-    var wrapCount = document.getElementById("teknik-chart-count-wrap");
-    var sumCount14 = 0;
-    for (si = 0; si < series14.counts.length; si++) {
-      sumCount14 += series14.counts[si];
-    }
-    if (canvasCount && typeof Chart !== "undefined") {
-      if (sumCount14 <= 0) {
-        if (emptyCount) {
-          emptyCount.hidden = false;
-          emptyCount.textContent = "Son 14 günde teknik oturum yok.";
+    var canvasWeekday = document.getElementById("teknik-chart-weekday");
+    var emptyWeekday = document.getElementById("teknik-chart-weekday-empty");
+    var wrapWeekday = document.getElementById("teknik-chart-weekday-wrap");
+    if (canvasWeekday && typeof Chart !== "undefined") {
+      var WEEKDAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+      var weekdayMinutes = [0, 0, 0, 0, 0, 0, 0];
+      state.sessions.forEach(function (s) {
+        if (String(s.category || "").trim() !== "technical") return;
+        var iso = sessionEffectiveTime(s);
+        if (!iso) return;
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return;
+        var idx = (d.getDay() + 6) % 7;
+        weekdayMinutes[idx] += s.durationMinutes || 0;
+      });
+      var weekdaySum = 0;
+      for (si = 0; si < weekdayMinutes.length; si++) weekdaySum += weekdayMinutes[si];
+      if (weekdaySum <= 0) {
+        if (emptyWeekday) {
+          emptyWeekday.hidden = false;
+          emptyWeekday.textContent = "Henüz teknik kayıt yok.";
         }
-        if (wrapCount) wrapCount.hidden = true;
+        if (wrapWeekday) wrapWeekday.hidden = true;
       } else {
-        if (emptyCount) emptyCount.hidden = true;
-        if (wrapCount) wrapCount.hidden = false;
-        teknikCountChart = new Chart(canvasCount, {
+        if (emptyWeekday) emptyWeekday.hidden = true;
+        if (wrapWeekday) wrapWeekday.hidden = false;
+        teknikWeekdayChart = new Chart(canvasWeekday, {
           type: "bar",
           data: {
-            labels: series14.labels,
+            labels: WEEKDAY_LABELS,
             datasets: [
               {
-                label: "Oturum",
-                data: series14.counts,
+                label: "Süre",
+                data: weekdayMinutes,
                 backgroundColor: "rgba(124, 58, 237, 0.55)",
                 hoverBackgroundColor: "rgba(124, 58, 237, 0.78)",
                 borderColor: "#7c3aed",
                 borderWidth: 1,
                 borderRadius: 6,
-                maxBarThickness: 28,
+                maxBarThickness: 38,
               },
             ],
           },
@@ -3319,15 +3467,12 @@
               x: { grid: { display: false } },
               y: {
                 beginAtZero: true,
+                title: { display: true, text: "Dakika" },
                 ticks: {
-                  stepSize: 1,
-                  precision: 0,
                   callback: function (v) {
-                    if (Math.floor(v) !== v) return "";
-                    return v;
+                    return v + " dk";
                   },
                 },
-                title: { display: true, text: "Oturum sayısı" },
               },
             },
             plugins: {
@@ -3336,9 +3481,7 @@
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
-                    var dayIdx = ctx.dataIndex;
-                    var mins = series14.minutes[dayIdx] || 0;
-                    return [v + " oturum", "Toplam: " + mins + " dk"];
+                    return "Toplam: " + v + " dk";
                   },
                 },
               },
