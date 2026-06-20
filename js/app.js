@@ -251,6 +251,28 @@
     return { en: en, tech: tech, book: book, inv: inv, total: en + tech + book + inv };
   }
 
+  /** Aylık toplamlar: haftalık ile aynı ağırlık (yatırım = işlem başına 1). */
+  function monthlyStudyWeights(year, monthIndex) {
+    var en = 0;
+    var tech = 0;
+    var book = 0;
+    var inv = 0;
+    state.sessions.forEach(function (s) {
+      var iso = sessionEffectiveTime(s);
+      if (!iso) return;
+      var t = new Date(iso);
+      if (isNaN(t.getTime())) return;
+      if (t.getFullYear() !== year || t.getMonth() !== monthIndex) return;
+      var w = sessionChartWeight(s);
+      var c = String(s.category || "").trim();
+      if (c === "english") en += w;
+      else if (c === "technical") tech += w;
+      else if (c === "book") book += w;
+      else if (c === "investment") inv += w;
+    });
+    return { en: en, tech: tech, book: book, inv: inv, total: en + tech + book + inv };
+  }
+
   function englishSubtypeMinutesSince(cutoffDate) {
     var agg = {};
     state.sessions.forEach(function (s) {
@@ -1058,17 +1080,35 @@
     destroyDashboardIndexCharts();
     if (typeof Chart === "undefined") return;
 
-    var curMon = startOfWeekMonday(new Date());
-    var prevMon = new Date(curMon);
-    prevMon.setDate(prevMon.getDate() - 7);
-    var thisW = weeklyStudyWeightsMonday(curMon);
-    var prevW = weeklyStudyWeightsMonday(prevMon);
+    var mode = sessionStorage.getItem("dashCompareMode") === "month" ? "month" : "week";
+    var thisW, prevW, curLabel, prevLabel, emptyMsg;
+    if (mode === "month") {
+      var now = new Date();
+      var prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      thisW = monthlyStudyWeights(now.getFullYear(), now.getMonth());
+      prevW = monthlyStudyWeights(prevMonthDate.getFullYear(), prevMonthDate.getMonth());
+      curLabel = "Bu ay";
+      prevLabel = "Geçen ay";
+      emptyMsg = "Bu ve geçen ay için kayıt yok.";
+    } else {
+      var curMon = startOfWeekMonday(new Date());
+      var prevMon = new Date(curMon);
+      prevMon.setDate(prevMon.getDate() - 7);
+      thisW = weeklyStudyWeightsMonday(curMon);
+      prevW = weeklyStudyWeightsMonday(prevMon);
+      curLabel = "Bu hafta";
+      prevLabel = "Geçen hafta";
+      emptyMsg = "Bu ve geçen hafta için kayıt yok.";
+    }
+
+    var cmpTitle = document.getElementById("dash-compare-title");
+    if (cmpTitle) cmpTitle.textContent = mode === "month" ? "Bu ay vs geçen ay" : "Bu hafta vs geçen hafta";
 
     if (cCmp) {
       var cardCmp = cCmp.closest(".chart-card");
       var cmpSum = thisW.total + prevW.total;
       if (cmpSum <= 0) {
-        toggleChartCardEmpty(cardCmp, true, "Bu ve geçen hafta için kayıt yok.");
+        toggleChartCardEmpty(cardCmp, true, emptyMsg);
       } else {
         toggleChartCardEmpty(cardCmp, false, "");
         dashboardChartWeekCompare = new Chart(cCmp, {
@@ -1077,7 +1117,7 @@
             labels: ["YDS", "Teknik", "Kitap", "Yatırım"],
             datasets: [
               {
-                label: "Bu hafta",
+                label: curLabel,
                 data: [thisW.en, thisW.tech, thisW.book, thisW.inv],
                 backgroundColor: "#2f9c8f",
                 hoverBackgroundColor: "#277f74",
@@ -1087,7 +1127,7 @@
                 maxBarThickness: 34,
               },
               {
-                label: "Geçen hafta",
+                label: prevLabel,
                 data: [prevW.en, prevW.tech, prevW.book, prevW.inv],
                 backgroundColor: "#cbd5e1",
                 hoverBackgroundColor: "#94a3b8",
@@ -1169,7 +1209,7 @@
                     if (prev === 0 && cur === 0) return "Kayıt yok";
                     if (prev === 0) return "▲ Yeni (+" + cur + " dk)";
                     var pct = Math.round((diff / prev) * 100);
-                    if (diff === 0) return "Geçen haftayla aynı";
+                    if (diff === 0) return mode === "month" ? "Geçen ayla aynı" : "Geçen haftayla aynı";
                     return (diff > 0 ? "▲ +" : "▼ ") + diff + " dk (" + (pct > 0 ? "+" : "") + pct + "%)";
                   },
                 },
@@ -3130,6 +3170,9 @@
       return s.category === "investment";
     });
 
+    var countEl = document.getElementById("yatirim-records-count");
+    if (countEl) countEl.textContent = String(all.length);
+
     if (all.length === 0) {
       if (emptyAll) emptyAll.hidden = false;
       if (wrap) wrap.hidden = true;
@@ -3203,12 +3246,12 @@
     };
   }
 
-  function technicalDailySeriesLast14() {
+  function technicalDailySeries(days) {
     var labels = [];
     var minutes = [];
     var counts = [];
     var t;
-    for (t = 13; t >= 0; t--) {
+    for (t = days - 1; t >= 0; t--) {
       var dt = new Date();
       dt.setHours(0, 0, 0, 0);
       dt.setDate(dt.getDate() - t);
@@ -3230,6 +3273,159 @@
     return { labels: labels, minutes: minutes, counts: counts };
   }
 
+  var teknikWeekdayPeriod = "year";
+
+  function teknikDistributionData(period) {
+    var now = new Date();
+    var labels = [];
+    var data = [];
+    var fullLabels = [];
+    var start;
+    var end;
+    var idxOf;
+
+    if (period === "week") {
+      labels = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+      fullLabels = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+      data = [0, 0, 0, 0, 0, 0, 0];
+      start = startOfWeekMonday(now);
+      end = new Date(start);
+      end.setDate(end.getDate() + 7);
+      idxOf = function (d) {
+        return (d.getDay() + 6) % 7;
+      };
+    } else if (period === "month") {
+      var daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      var di;
+      for (di = 1; di <= daysInMonth; di++) {
+        labels.push(String(di));
+        fullLabels.push(di + " " + MONTH_NAMES_TR[now.getMonth()]);
+        data.push(0);
+      }
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      idxOf = function (d) {
+        return d.getDate() - 1;
+      };
+    } else {
+      var mi;
+      for (mi = 0; mi < 12; mi++) {
+        labels.push(MONTH_SHORT_TR[mi]);
+        fullLabels.push(MONTH_NAMES_TR[mi] + " " + now.getFullYear());
+        data.push(0);
+      }
+      start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear() + 1, 0, 1);
+      idxOf = function (d) {
+        return d.getMonth();
+      };
+    }
+
+    state.sessions.forEach(function (s) {
+      if (String(s.category || "").trim() !== "technical") return;
+      var iso = sessionEffectiveTime(s);
+      if (!iso) return;
+      var d = new Date(iso);
+      if (isNaN(d.getTime()) || d < start || d >= end) return;
+      var idx = idxOf(d);
+      if (idx >= 0 && idx < data.length) data[idx] += s.durationMinutes || 0;
+    });
+
+    return { labels: labels, fullLabels: fullLabels, data: data };
+  }
+
+  function renderTeknikWeekdayChart(period) {
+    var canvasWeekday = document.getElementById("teknik-chart-weekday");
+    if (!canvasWeekday || typeof Chart === "undefined") return;
+    var emptyWeekday = document.getElementById("teknik-chart-weekday-empty");
+    var wrapWeekday = document.getElementById("teknik-chart-weekday-wrap");
+    var subEl = document.getElementById("teknik-weekday-sub");
+
+    if (teknikWeekdayChart) {
+      teknikWeekdayChart.destroy();
+      teknikWeekdayChart = null;
+    }
+
+    var subMap = {
+      week: "Bu hafta — günlere göre",
+      month: "Bu ay — günlere göre",
+      year: "Bu yıl — aylara göre",
+    };
+    if (subEl) subEl.textContent = subMap[period] || subMap.year;
+
+    var dist = teknikDistributionData(period);
+    var dataArr = dist.data;
+    var weekdaySum = 0;
+    var wi;
+    for (wi = 0; wi < dataArr.length; wi++) weekdaySum += dataArr[wi];
+
+    if (weekdaySum <= 0) {
+      if (emptyWeekday) {
+        emptyWeekday.hidden = false;
+        var msgMap = { week: "Bu hafta teknik kayıt yok.", month: "Bu ay teknik kayıt yok.", year: "Bu yıl teknik kayıt yok." };
+        emptyWeekday.textContent = msgMap[period] || "Teknik kayıt yok.";
+      }
+      if (wrapWeekday) wrapWeekday.hidden = true;
+      return;
+    }
+    if (emptyWeekday) emptyWeekday.hidden = true;
+    if (wrapWeekday) wrapWeekday.hidden = false;
+
+    teknikWeekdayChart = new Chart(canvasWeekday, {
+      type: "bar",
+      data: {
+        labels: dist.labels,
+        datasets: [
+          {
+            label: "Süre",
+            data: dataArr,
+            fullLabels: dist.fullLabels,
+            backgroundColor: "rgba(138, 122, 214, 0.55)",
+            hoverBackgroundColor: "rgba(138, 122, 214, 0.78)",
+            borderColor: "#8a7ad6",
+            borderWidth: 1,
+            borderRadius: 6,
+            maxBarThickness: period === "month" ? 18 : 38,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: { grid: { display: false } },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "Dakika" },
+            ticks: {
+              callback: function (v) {
+                return v + " dk";
+              },
+            },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function (items) {
+                if (!items || !items.length) return "";
+                var ds = items[0].dataset || {};
+                var fl = ds.fullLabels || [];
+                return fl[items[0].dataIndex] || items[0].label || "";
+              },
+              label: function (ctx) {
+                var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
+                return "Toplam: " + v + " dk";
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   function renderTeknikPage() {
     if (!document.getElementById("teknik-dashboard")) return;
     state = loadState();
@@ -3239,20 +3435,22 @@
     var wk = document.getElementById("teknik-stat-week");
     if (wk) wk.textContent = formatMinutesForDisplay(weekStats.minutes);
 
-    var series14 = technicalDailySeriesLast14();
+    renderTeknikWeekdayChart(teknikWeekdayPeriod);
+
+    var series30 = technicalDailySeries(30);
     var canvasTrend = document.getElementById("teknik-chart-trend");
     var emptyTrend = document.getElementById("teknik-chart-trend-empty");
     var wrapTrend = document.getElementById("teknik-chart-trend-wrap");
-    var sum14 = 0;
+    var sum30 = 0;
     var si;
-    for (si = 0; si < series14.minutes.length; si++) {
-      sum14 += series14.minutes[si];
+    for (si = 0; si < series30.minutes.length; si++) {
+      sum30 += series30.minutes[si];
     }
     if (canvasTrend && typeof Chart !== "undefined") {
-      if (sum14 <= 0) {
+      if (sum30 <= 0) {
         if (emptyTrend) {
           emptyTrend.hidden = false;
-          emptyTrend.textContent = "Son 14 günde teknik kayıt yok.";
+          emptyTrend.textContent = "Son 30 günde teknik kayıt yok.";
         }
         if (wrapTrend) wrapTrend.hidden = true;
       } else {
@@ -3261,17 +3459,17 @@
         teknikTrendChart = new Chart(canvasTrend, {
           type: "line",
           data: {
-            labels: series14.labels,
+            labels: series30.labels,
             datasets: [
               {
                 label: "Teknik (dk)",
-                data: series14.minutes,
+                data: series30.minutes,
                 borderColor: "#8a7ad6",
                 backgroundColor: "rgba(138, 122, 214, 0.12)",
                 fill: true,
                 tension: 0.25,
                 borderWidth: 2,
-                pointRadius: 3,
+                pointRadius: 2,
                 pointHoverRadius: 5,
               },
             ],
@@ -3281,7 +3479,7 @@
             maintainAspectRatio: false,
             interaction: { mode: "index", intersect: false },
             scales: {
-              x: { grid: { display: false } },
+              x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
               y: {
                 beginAtZero: true,
                 title: { display: true, text: "Dakika" },
@@ -3299,83 +3497,8 @@
                   label: function (ctx) {
                     var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
                     var dayIdx = ctx.dataIndex;
-                    var cnt = series14.counts[dayIdx] || 0;
+                    var cnt = series30.counts[dayIdx] || 0;
                     return ["Süre: " + v + " dk", "Oturum: " + cnt];
-                  },
-                },
-              },
-            },
-          },
-        });
-      }
-    }
-
-    var canvasWeekday = document.getElementById("teknik-chart-weekday");
-    var emptyWeekday = document.getElementById("teknik-chart-weekday-empty");
-    var wrapWeekday = document.getElementById("teknik-chart-weekday-wrap");
-    if (canvasWeekday && typeof Chart !== "undefined") {
-      var WEEKDAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-      var weekdayMinutes = [0, 0, 0, 0, 0, 0, 0];
-      state.sessions.forEach(function (s) {
-        if (String(s.category || "").trim() !== "technical") return;
-        var iso = sessionEffectiveTime(s);
-        if (!iso) return;
-        var d = new Date(iso);
-        if (isNaN(d.getTime())) return;
-        var idx = (d.getDay() + 6) % 7;
-        weekdayMinutes[idx] += s.durationMinutes || 0;
-      });
-      var weekdaySum = 0;
-      for (si = 0; si < weekdayMinutes.length; si++) weekdaySum += weekdayMinutes[si];
-      if (weekdaySum <= 0) {
-        if (emptyWeekday) {
-          emptyWeekday.hidden = false;
-          emptyWeekday.textContent = "Henüz teknik kayıt yok.";
-        }
-        if (wrapWeekday) wrapWeekday.hidden = true;
-      } else {
-        if (emptyWeekday) emptyWeekday.hidden = true;
-        if (wrapWeekday) wrapWeekday.hidden = false;
-        teknikWeekdayChart = new Chart(canvasWeekday, {
-          type: "bar",
-          data: {
-            labels: WEEKDAY_LABELS,
-            datasets: [
-              {
-                label: "Süre",
-                data: weekdayMinutes,
-                backgroundColor: "rgba(138, 122, 214, 0.55)",
-                hoverBackgroundColor: "rgba(138, 122, 214, 0.78)",
-                borderColor: "#8a7ad6",
-                borderWidth: 1,
-                borderRadius: 6,
-                maxBarThickness: 38,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: "index", intersect: false },
-            scales: {
-              x: { grid: { display: false } },
-              y: {
-                beginAtZero: true,
-                title: { display: true, text: "Dakika" },
-                ticks: {
-                  callback: function (v) {
-                    return v + " dk";
-                  },
-                },
-              },
-            },
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label: function (ctx) {
-                    var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
-                    return "Toplam: " + v + " dk";
                   },
                 },
               },
@@ -4879,6 +5002,7 @@
 
     var labels = [];
     var minutes = [];
+    var hours = [];
     var now = new Date();
     var mi;
     for (mi = 11; mi >= 0; mi--) {
@@ -4897,6 +5021,7 @@
       });
       labels.push(MONTH_SHORT_TR[ref.getMonth()] + " " + String(ref.getFullYear()).slice(2));
       minutes.push(total);
+      hours.push(Math.round((total / 60) * 10) / 10);
     }
 
     var sum = 0;
@@ -4925,7 +5050,7 @@
         datasets: [
           {
             label: "Çalışma",
-            data: minutes,
+            data: hours,
             backgroundColor: "#2f9c8f",
             hoverBackgroundColor: "#277f74",
             borderWidth: 0,
@@ -4956,7 +5081,7 @@
               padding: 6,
               maxTicksLimit: 6,
               callback: function (val) {
-                return val + " dk";
+                return val + " sa";
               },
             },
           },
@@ -4972,10 +5097,7 @@
             callbacks: {
               label: function (ctx) {
                 var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
-                var h = Math.floor(v / 60);
-                var mm = v % 60;
-                var hr = h > 0 ? h + " sa " + mm + " dk" : mm + " dk";
-                return "Toplam: " + v + " dk (" + hr + ")";
+                return "≈ " + v + " saat";
               },
             },
           },
@@ -5173,6 +5295,28 @@
   if (page === "dashboard") {
     bindExportClick();
     attachStandardImport();
+    var dashCmpSeg = document.getElementById("dash-compare-period");
+    if (dashCmpSeg && !dashCmpSeg.dataset.bound) {
+      dashCmpSeg.dataset.bound = "1";
+      var savedCmpMode = sessionStorage.getItem("dashCompareMode") === "month" ? "month" : "week";
+      dashCmpSeg.querySelectorAll(".seg-toggle__btn").forEach(function (b) {
+        var on = b.getAttribute("data-period") === savedCmpMode;
+        b.classList.toggle("seg-toggle__btn--active", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      dashCmpSeg.addEventListener("click", function (e) {
+        var btn = e.target.closest(".seg-toggle__btn");
+        if (!btn) return;
+        var mode = btn.getAttribute("data-period") === "month" ? "month" : "week";
+        sessionStorage.setItem("dashCompareMode", mode);
+        dashCmpSeg.querySelectorAll(".seg-toggle__btn").forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle("seg-toggle__btn--active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        renderDashboardIndexCharts();
+      });
+    }
     renderStats();
   } else if (page === "yeni") {
     el.btnStart.addEventListener("click", startTimer);
@@ -5614,6 +5758,7 @@
       if (ff) ff.addEventListener("change", rerenderTable);
       if (ft) ft.addEventListener("change", rerenderTable);
     }
+    bindRecordsCollapsible(document.getElementById("yatirim-records-panel"), "yatirimRecordsOpen");
     var ytbl = document.querySelector("#yatirim-list table.data-table");
     if (ytbl && !ytbl.dataset.sortBound) {
       ytbl.dataset.sortBound = "1";
@@ -5643,6 +5788,22 @@
   } else if (page === "teknik") {
     bindExportClick();
     attachStandardImport();
+    var weekdayPeriodTabs = document.getElementById("teknik-weekday-period");
+    if (weekdayPeriodTabs && !weekdayPeriodTabs.dataset.bound) {
+      weekdayPeriodTabs.dataset.bound = "1";
+      weekdayPeriodTabs.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-period]");
+        if (!btn || !weekdayPeriodTabs.contains(btn)) return;
+        teknikWeekdayPeriod = btn.getAttribute("data-period") || "year";
+        weekdayPeriodTabs.querySelectorAll(".seg-toggle__btn").forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle("seg-toggle__btn--active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        state = loadState();
+        renderTeknikWeekdayChart(teknikWeekdayPeriod);
+      });
+    }
     renderTeknikPage();
   } else if (page === "notlarim") {
     bindExportClick();

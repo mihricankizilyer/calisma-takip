@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=soft1" />
+  <link rel="stylesheet" href="css/style.css?v=soft9" />
 </head>
 <body data-page="dashboard" class="page-dashboard">
   <div class="shell">
@@ -21,7 +21,6 @@
       <nav class="sidebar__nav">
         <a href="index.html" class="sidebar__link sidebar__link--active" aria-current="page">Ana sayfa</a>
         <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
-        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
         <a href="yds.html" class="sidebar__link">YDS</a>
         <a href="teknik.html" class="sidebar__link">Teknik</a>
         <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
@@ -30,6 +29,7 @@
         <a href="calendar.html" class="sidebar__link">Takvim</a>
         <a href="giris.html" class="sidebar__link">Giriş</a>
         <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
+        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
       </nav>
     </aside>
 
@@ -112,10 +112,16 @@
           </div>
           <div class="charts-grid">
             <article class="chart-card chart-card--wide">
-              <h3 class="chart-card__title">Bu hafta vs geçen hafta</h3>
+              <div class="chart-card__head">
+                <h3 class="chart-card__title" id="dash-compare-title">Bu hafta vs geçen hafta</h3>
+                <div class="seg-toggle" id="dash-compare-period" role="tablist" aria-label="Dönem seçimi">
+                  <button type="button" class="seg-toggle__btn seg-toggle__btn--active" role="tab" data-period="week" aria-selected="true">Haftalık</button>
+                  <button type="button" class="seg-toggle__btn" role="tab" data-period="month" aria-selected="false">Aylık</button>
+                </div>
+              </div>
               <p class="chart-empty" hidden>Kayıt yok.</p>
               <div class="chart-card__canvas-wrap">
-                <canvas id="dashboard-chart-week-compare" role="img" aria-label="Haftalık kategori karşılaştırması"></canvas>
+                <canvas id="dashboard-chart-week-compare" role="img" aria-label="Dönemsel kategori karşılaştırması"></canvas>
               </div>
             </article>
           </div>
@@ -134,6 +140,6 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
   <script src="js/sync-api.js" defer></script>
-  <script src="js/app.js" defer></script>
+  <script src="js/app.js?v=soft9" defer></script>
 </body>
 </html>

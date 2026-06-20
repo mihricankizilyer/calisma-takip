@@ -2491,6 +2491,23 @@ body {
   color: var(--text);
 }
 
+.chart-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 0.65rem;
+}
+
+.chart-card__head .chart-card__title {
+  margin: 0;
+}
+
+.chart-card__head .seg-toggle {
+  margin: 0;
+}
+
 .chart-empty {
   margin: 0;
   padding: 2rem 0.5rem;
@@ -4263,7 +4280,7 @@ body {
 .teknik-hero-stat__val {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #5b21b6;
+  color: #7866c9;
 }
 
 .teknik-chart-wrap {
@@ -4273,6 +4290,40 @@ body {
 
 .teknik-chart-empty {
   margin: 0 0 0.75rem;
+}
+
+.seg-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin: 0 0 1rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.seg-toggle__btn {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border: 0;
+  border-radius: calc(var(--radius-sm) - 3px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.seg-toggle__btn:hover {
+  color: var(--text);
+}
+
+.seg-toggle__btn--active {
+  background: var(--surface);
+  color: var(--accent-tech);
+  font-weight: 600;
+  box-shadow: var(--shadow);
 }
 
 .teknik-records {

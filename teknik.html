@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=soft1" />
+  <link rel="stylesheet" href="css/style.css?v=soft8" />
 </head>
 <body data-page="teknik" class="page-teknik">
   <div class="shell">
@@ -21,7 +21,6 @@
       <nav class="sidebar__nav">
         <a href="index.html" class="sidebar__link">Ana sayfa</a>
         <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
-        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
         <a href="yds.html" class="sidebar__link">YDS</a>
         <a href="teknik.html" class="sidebar__link sidebar__link--active" aria-current="page">Teknik</a>
         <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
@@ -30,6 +29,7 @@
         <a href="calendar.html" class="sidebar__link">Takvim</a>
         <a href="giris.html" class="sidebar__link">Giriş</a>
         <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
+        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
       </nav>
     </aside>
 
@@ -66,8 +66,11 @@
 
         <section class="panel panel--teknik-chart" aria-labelledby="teknik-weekday-title">
           <div class="panel__head-row">
-            <h2 id="teknik-weekday-title" class="panel__h2">Haftanın günlerine göre</h2>
-            <p class="panel__sub">Tüm zamanlar — hangi günler daha çok teknik çalışıyorsun</p>
+            <h2 id="teknik-weekday-title" class="panel__h2">Teknik çalışma dağılımı</h2>
+          </div>
+          <div class="seg-toggle" id="teknik-weekday-period" role="tablist" aria-label="Dönem seçimi">
+            <button type="button" class="seg-toggle__btn" role="tab" data-period="week" aria-selected="false">Haftalık</button>
+            <button type="button" class="seg-toggle__btn seg-toggle__btn--active" role="tab" data-period="year" aria-selected="true">Aylık</button>
           </div>
           <p class="chart-empty teknik-chart-empty" id="teknik-chart-weekday-empty" hidden>Kayıt yok.</p>
           <div class="chart-card__canvas-wrap teknik-chart-wrap" id="teknik-chart-weekday-wrap">
@@ -77,12 +80,12 @@
 
         <section class="panel panel--teknik-chart" aria-labelledby="teknik-trend-title">
           <div class="panel__head-row">
-            <h2 id="teknik-trend-title" class="panel__h2">Son 14 gün</h2>
+            <h2 id="teknik-trend-title" class="panel__h2">Son 30 gün</h2>
             <p class="panel__sub">Günlük teknik çalışma süresi (dakika)</p>
           </div>
           <p class="chart-empty teknik-chart-empty" id="teknik-chart-trend-empty" hidden>Kayıt yok.</p>
           <div class="chart-card__canvas-wrap teknik-chart-wrap" id="teknik-chart-trend-wrap">
-            <canvas id="teknik-chart-trend" role="img" aria-label="Son on dört gün teknik süre grafiği"></canvas>
+            <canvas id="teknik-chart-trend" role="img" aria-label="Son otuz gün teknik süre grafiği"></canvas>
           </div>
         </section>
 
@@ -102,6 +105,6 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
   <script src="js/sync-api.js" defer></script>
-  <script src="js/app.js" defer></script>
+  <script src="js/app.js?v=soft8" defer></script>
 </body>
 </html>

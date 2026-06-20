@@ -21,7 +21,6 @@
       <nav class="sidebar__nav">
         <a href="index.html" class="sidebar__link">Ana sayfa</a>
         <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
-        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
         <a href="yds.html" class="sidebar__link">YDS</a>
         <a href="teknik.html" class="sidebar__link">Teknik</a>
         <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
@@ -30,6 +29,7 @@
         <a href="calendar.html" class="sidebar__link">Takvim</a>
         <a href="giris.html" class="sidebar__link">Giriş</a>
         <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
+        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
       </nav>
     </aside>
 
@@ -114,7 +114,13 @@
         </section>
 
         <section class="panel panel--yatirim-records" aria-labelledby="y-title">
-          <h2 id="y-title" class="panel__h2">Yatırım kayıtları</h2>
+          <details class="gecmis-records-panel records-collapsible" id="yatirim-records-panel">
+            <summary class="gecmis-records-tab records-collapsible__summary">
+              <span class="gecmis-records-tab__label" id="y-title">Yatırım kayıtları</span>
+              <span class="gecmis-records-tab__count" id="yatirim-records-count">0</span>
+              <span class="records-collapsible__chev" aria-hidden="true"></span>
+            </summary>
+            <div class="gecmis-records-body">
           <p id="yatirim-empty-all" class="yatirim-empty-msg yatirim-empty-msg--banner table-muted" hidden>Kayıt yok. <a href="yeni-kayit.html">İşlem ekle</a></p>
           <div id="yatirim-records-wrap" hidden>
             <div class="yatirim-table-toolbar" id="yatirim-table-toolbar">
@@ -173,6 +179,8 @@
             </div>
             <p id="yatirim-empty-filter" class="yatirim-empty-msg yatirim-empty-msg--filter table-muted" hidden>Kayıt yok.</p>
           </div>
+            </div>
+          </details>
         </section>
 
       </div>
