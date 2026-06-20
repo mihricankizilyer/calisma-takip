@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=soft1" />
 </head>
 <body data-page="dashboard" class="page-dashboard">
   <div class="shell">
@@ -108,21 +108,14 @@
         <section class="panel panel--dashboard-charts" aria-labelledby="dash-charts-title">
           <div class="panel__head-row">
             <h2 id="dash-charts-title" class="panel__h2">Grafikler</h2>
-            <p class="panel__sub">Haftalık karşılaştırma · trend · aktivite</p>
+            <p class="panel__sub">Haftalık karşılaştırma · aktivite</p>
           </div>
           <div class="charts-grid">
-            <article class="chart-card">
+            <article class="chart-card chart-card--wide">
               <h3 class="chart-card__title">Bu hafta vs geçen hafta</h3>
               <p class="chart-empty" hidden>Kayıt yok.</p>
               <div class="chart-card__canvas-wrap">
                 <canvas id="dashboard-chart-week-compare" role="img" aria-label="Haftalık kategori karşılaştırması"></canvas>
-              </div>
-            </article>
-            <article class="chart-card">
-              <h3 class="chart-card__title">Son 8 hafta çalışma trendi</h3>
-              <p class="chart-empty" hidden>Kayıt yok.</p>
-              <div class="chart-card__canvas-wrap">
-                <canvas id="dashboard-chart-trend" role="img" aria-label="Son sekiz haftalık çalışma süresi trendi"></canvas>
               </div>
             </article>
           </div>

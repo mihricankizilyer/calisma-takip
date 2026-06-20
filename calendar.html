@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=soft1" />
 </head>
 <body data-page="calendar" class="page-calendar">
   <div class="shell">
@@ -72,9 +72,51 @@
           <div id="calendar-root" class="calendar-grid-wrap"></div>
         </section>
 
+        <section class="panel panel--calendar-chart" aria-labelledby="cal-chart-title">
+          <div class="panel__head-row">
+            <h2 id="cal-chart-title" class="panel__h2">Aylık çalışma süresi</h2>
+            <p class="panel__sub">Son 12 ay — toplam çalışma süresi (dakika)</p>
+          </div>
+          <p class="chart-empty" id="calendar-chart-monthly-empty" hidden>Kayıt yok.</p>
+          <div class="chart-card__canvas-wrap chart-card__canvas-wrap--tall" id="calendar-chart-monthly-wrap">
+            <canvas id="calendar-chart-monthly" role="img" aria-label="Son on iki ay toplam çalışma süresi grafiği"></canvas>
+          </div>
+        </section>
+
+        <section class="panel panel--dashboard-charts panel--gecmis-charts" aria-labelledby="cal-charts-title">
+          <div class="panel__head-row">
+            <h2 id="cal-charts-title" class="panel__h2">Grafikler</h2>
+            <p class="panel__sub">YDS / teknik / kitap: dakika; yatırım: işlem sayısı (süre yok)</p>
+          </div>
+          <div class="charts-grid">
+            <article class="chart-card">
+              <h3 class="chart-card__title">Bu hafta kategori dağılımı</h3>
+              <p class="chart-empty" hidden>Bu hafta henüz kayıt yok.</p>
+              <div class="chart-card__canvas-wrap">
+                <canvas id="chart-week-categories" role="img" aria-label="Bu hafta kategori dağılımı grafiği"></canvas>
+              </div>
+            </article>
+            <article class="chart-card">
+              <h3 class="chart-card__title">Son 7 gün</h3>
+              <p class="chart-empty" hidden>Son 7 günde kayıt yok.</p>
+              <div class="chart-card__canvas-wrap">
+                <canvas id="chart-daily-7" role="img" aria-label="Son yedi gün çalışma süreleri grafiği"></canvas>
+              </div>
+            </article>
+            <article class="chart-card chart-card--wide">
+              <h3 class="chart-card__title">Son 8 hafta (kategori)</h3>
+              <p class="chart-empty" hidden>Son 8 haftada kayıt yok.</p>
+              <div class="chart-card__canvas-wrap chart-card__canvas-wrap--tall">
+                <canvas id="chart-weeks-8-stacked" role="img" aria-label="Son sekiz hafta yığılmış kategori grafiği"></canvas>
+              </div>
+            </article>
+          </div>
+        </section>
+
       </div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
   <script src="js/sync-api.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>

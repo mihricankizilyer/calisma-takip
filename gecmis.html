@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=soft1" />
 </head>
 <body data-page="gecmis" class="page-gecmis">
   <div class="shell">
@@ -51,36 +51,6 @@
       </header>
 
       <div class="shell__content shell__content--gecmis">
-        <section class="panel panel--dashboard-charts panel--gecmis-charts" aria-labelledby="gecmis-charts-title">
-          <div class="panel__head-row">
-            <h2 id="gecmis-charts-title" class="panel__h2">Grafikler</h2>
-            <p class="panel__sub">YDS / teknik / kitap: dakika; yatırım: işlem sayısı (süre yok)</p>
-          </div>
-          <div class="charts-grid">
-            <article class="chart-card">
-              <h3 class="chart-card__title">Bu hafta kategori dağılımı</h3>
-              <p class="chart-empty" hidden>Bu hafta henüz kayıt yok.</p>
-              <div class="chart-card__canvas-wrap">
-                <canvas id="chart-week-categories" role="img" aria-label="Bu hafta kategori dağılımı grafiği"></canvas>
-              </div>
-            </article>
-            <article class="chart-card">
-              <h3 class="chart-card__title">Son 7 gün</h3>
-              <p class="chart-empty" hidden>Son 7 günde kayıt yok.</p>
-              <div class="chart-card__canvas-wrap">
-                <canvas id="chart-daily-7" role="img" aria-label="Son yedi gün çalışma süreleri grafiği"></canvas>
-              </div>
-            </article>
-            <article class="chart-card chart-card--wide">
-              <h3 class="chart-card__title">Son 8 hafta (kategori)</h3>
-              <p class="chart-empty" hidden>Son 8 haftada kayıt yok.</p>
-              <div class="chart-card__canvas-wrap chart-card__canvas-wrap--tall">
-                <canvas id="chart-weeks-8-stacked" role="img" aria-label="Son sekiz hafta yığılmış kategori grafiği"></canvas>
-              </div>
-            </article>
-          </div>
-        </section>
-
         <section class="panel panel--list panel--list-page panel--gecmis-list" aria-labelledby="list-title">
           <div class="panel__head-row panel__head-row--list">
             <div class="panel__head-text">

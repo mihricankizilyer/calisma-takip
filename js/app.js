@@ -599,7 +599,7 @@
     );
   }
 
-  var INV_CHART_COLORS = ["#0d9488", "#7c3aed", "#c2410c", "#15803d", "#0ea5e9", "#ca8a04", "#be123c", "#4f46e5", "#db2777"];
+  var INV_CHART_COLORS = ["#2f9c8f", "#8a7ad6", "#d2814f", "#5fa777", "#5bb0d6", "#d9b14e", "#cf6f68", "#7d8ad6", "#cf7aae"];
 
   function drawDonutPercentLabels(svg, entries, volume) {
     if (!svg) return;
@@ -703,7 +703,6 @@
   var dashboardChartWeek = null;
   var dashboardChartDaily = null;
   var dashboardChartWeekCompare = null;
-  var dashboardChartTrend = null;
   var gecmisChart8Week = null;
 
   function destroyDashboardIndexCharts() {
@@ -711,10 +710,6 @@
     if (dashboardChartWeekCompare) {
       dashboardChartWeekCompare.destroy();
       dashboardChartWeekCompare = null;
-    }
-    if (dashboardChartTrend) {
-      dashboardChartTrend.destroy();
-      dashboardChartTrend = null;
     }
   }
 
@@ -768,22 +763,22 @@
         if (w.en > 0) {
           labelsW.push("YDS");
           dataW.push(w.en);
-          colorsW.push("#0d9488");
+          colorsW.push("#2f9c8f");
         }
         if (w.tech > 0) {
           labelsW.push("Teknik");
           dataW.push(w.tech);
-          colorsW.push("#7c3aed");
+          colorsW.push("#8a7ad6");
         }
         if (w.book > 0) {
           labelsW.push("Kitap");
           dataW.push(w.book);
-          colorsW.push("#d97706");
+          colorsW.push("#dca15a");
         }
         if (w.inv > 0) {
           labelsW.push("Yatırım");
           dataW.push(w.inv);
-          colorsW.push("#2563eb");
+          colorsW.push("#5b86d6");
         }
         dashboardChartWeek = new Chart(canvasWeek, {
           type: "doughnut",
@@ -880,10 +875,10 @@
           data: {
             labels: labels7,
             datasets: [
-              { label: "YDS", data: dEn, backgroundColor: "#0d9488", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
-              { label: "Teknik", data: dTech, backgroundColor: "#7c3aed", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
-              { label: "Kitap", data: dBook, backgroundColor: "#d97706", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
-              { label: "Yatırım", data: dInv, backgroundColor: "#2563eb", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
+              { label: "YDS", data: dEn, backgroundColor: "#2f9c8f", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
+              { label: "Teknik", data: dTech, backgroundColor: "#8a7ad6", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
+              { label: "Kitap", data: dBook, backgroundColor: "#dca15a", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
+              { label: "Yatırım", data: dInv, backgroundColor: "#5b86d6", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
             ],
           },
           options: {
@@ -985,10 +980,10 @@
           data: {
             labels: labels8,
             datasets: [
-              { label: "YDS", data: wEn, backgroundColor: "#0d9488", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
-              { label: "Teknik", data: wTech, backgroundColor: "#7c3aed", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
-              { label: "Kitap", data: wBook, backgroundColor: "#d97706", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
-              { label: "Yatırım", data: wInv, backgroundColor: "#2563eb", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "YDS", data: wEn, backgroundColor: "#2f9c8f", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "Teknik", data: wTech, backgroundColor: "#8a7ad6", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "Kitap", data: wBook, backgroundColor: "#dca15a", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "Yatırım", data: wInv, backgroundColor: "#5b86d6", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
             ],
           },
           options: {
@@ -1058,8 +1053,7 @@
   function renderDashboardIndexCharts() {
     if (page !== "dashboard") return;
     var cCmp = document.getElementById("dashboard-chart-week-compare");
-    var cTrend = document.getElementById("dashboard-chart-trend");
-    if (!cCmp && !cTrend) return;
+    if (!cCmp) return;
     state = loadState();
     destroyDashboardIndexCharts();
     if (typeof Chart === "undefined") return;
@@ -1085,8 +1079,8 @@
               {
                 label: "Bu hafta",
                 data: [thisW.en, thisW.tech, thisW.book, thisW.inv],
-                backgroundColor: "#0d9488",
-                hoverBackgroundColor: "#0f766e",
+                backgroundColor: "#2f9c8f",
+                hoverBackgroundColor: "#277f74",
                 borderWidth: 0,
                 borderRadius: 6,
                 borderSkipped: false,
@@ -1186,106 +1180,6 @@
       }
     }
 
-    if (cTrend) {
-      var cardT = cTrend.closest(".chart-card");
-      var endWT = startOfWeekMonday(new Date());
-      var labelsT = [];
-      var trEn = [];
-      var trTech = [];
-      var trBook = [];
-      var trTotal = [];
-      var ti;
-      for (ti = 7; ti >= 0; ti--) {
-        var monT = new Date(endWT);
-        monT.setDate(monT.getDate() - ti * 7);
-        var wT = weeklyStudyWeightsMonday(monT);
-        labelsT.push(monT.getDate() + " " + MONTH_SHORT_TR[monT.getMonth()]);
-        trEn.push(wT.en);
-        trTech.push(wT.tech);
-        trBook.push(wT.book);
-        trTotal.push(wT.en + wT.tech + wT.book);
-      }
-      var trendSum = 0;
-      for (ti = 0; ti < trTotal.length; ti++) trendSum += trTotal[ti];
-      if (trendSum <= 0) {
-        toggleChartCardEmpty(cardT, true, "Son 8 haftada çalışma kaydı yok.");
-      } else {
-        toggleChartCardEmpty(cardT, false, "");
-        dashboardChartTrend = new Chart(cTrend, {
-          type: "line",
-          data: {
-            labels: labelsT,
-            datasets: [
-              {
-                label: "Toplam",
-                data: trTotal,
-                borderColor: "#0f766e",
-                backgroundColor: "rgba(15,118,110,0.12)",
-                borderWidth: 2,
-                fill: true,
-                tension: 0.35,
-                pointRadius: 3,
-                pointBackgroundColor: "#0f766e",
-              },
-              {
-                label: "YDS",
-                data: trEn,
-                borderColor: "#0d9488",
-                backgroundColor: "transparent",
-                borderWidth: 1.5,
-                tension: 0.35,
-                pointRadius: 0,
-              },
-              {
-                label: "Teknik",
-                data: trTech,
-                borderColor: "#7c3aed",
-                backgroundColor: "transparent",
-                borderWidth: 1.5,
-                tension: 0.35,
-                pointRadius: 0,
-              },
-              {
-                label: "Kitap",
-                data: trBook,
-                borderColor: "#d97706",
-                backgroundColor: "transparent",
-                borderWidth: 1.5,
-                tension: 0.35,
-                pointRadius: 0,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: "index", intersect: false },
-            scales: {
-              x: { grid: { display: false } },
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  callback: function (val) {
-                    return val + " dk";
-                  },
-                },
-              },
-            },
-            plugins: {
-              legend: { position: "bottom", labels: { boxWidth: 12, padding: 8, font: { size: 11 } } },
-              tooltip: {
-                callbacks: {
-                  label: function (ctx) {
-                    var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
-                    return (ctx.dataset.label || "") + ": " + v + " dk";
-                  },
-                },
-              },
-            },
-          },
-        });
-      }
-    }
   }
 
   function renderDashboardHeatmap() {
@@ -3372,8 +3266,8 @@
               {
                 label: "Teknik (dk)",
                 data: series14.minutes,
-                borderColor: "#7c3aed",
-                backgroundColor: "rgba(124, 58, 237, 0.12)",
+                borderColor: "#8a7ad6",
+                backgroundColor: "rgba(138, 122, 214, 0.12)",
                 fill: true,
                 tension: 0.25,
                 borderWidth: 2,
@@ -3450,9 +3344,9 @@
               {
                 label: "Süre",
                 data: weekdayMinutes,
-                backgroundColor: "rgba(124, 58, 237, 0.55)",
-                hoverBackgroundColor: "rgba(124, 58, 237, 0.78)",
-                borderColor: "#7c3aed",
+                backgroundColor: "rgba(138, 122, 214, 0.55)",
+                hoverBackgroundColor: "rgba(138, 122, 214, 0.78)",
+                borderColor: "#8a7ad6",
                 borderWidth: 1,
                 borderRadius: 6,
                 maxBarThickness: 38,
@@ -3519,7 +3413,7 @@
       } else {
         if (emptyTopic) emptyTopic.hidden = true;
         if (wrapTopic) wrapTopic.hidden = false;
-        var colors = ["#7c3aed", "#a78bfa", "#c4b5fd", "#8b5cf6", "#6d28d9", "#5b21b6", "#4c1d95", "#7e22ce"];
+        var colors = ["#8a7ad6", "#a99ce0", "#c4bbeb", "#9a8bdb", "#7866c9", "#6d5cbf", "#b0a3e6", "#8577cf"];
         topicKeys.sort(function (a, b) {
           return topicAgg[b] - topicAgg[a];
         });
@@ -3712,12 +3606,12 @@
 
     var order = ["calisma", "grammar", "cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "kelime"];
     var colors = {
-      calisma: "#0d9488",
+      calisma: "#2f9c8f",
       grammar: "#14b8a6",
-      cloze: "#7c3aed",
+      cloze: "#8a7ad6",
       tr_eng: "#a855f7",
       eng_tr: "#6366f1",
-      passage: "#d97706",
+      passage: "#dca15a",
       listening: "#0891b2",
       paragraf: "#ea580c",
       kelime: "#059669",
@@ -3815,8 +3709,8 @@
               {
                 label: "Toplam YDS (dk)",
                 data: cum.data,
-                borderColor: "#0f766e",
-                backgroundColor: "rgba(15, 118, 110, 0.1)",
+                borderColor: "#277f74",
+                backgroundColor: "rgba(39, 127, 116, 0.1)",
                 fill: true,
                 tension: 0.2,
                 borderWidth: 2,
@@ -3947,13 +3841,13 @@
           {
             label: "Net (D − Y/4)",
             data: nets,
-            borderColor: "#0d9488",
-            backgroundColor: "rgba(13, 148, 136, 0.12)",
+            borderColor: "#2f9c8f",
+            backgroundColor: "rgba(47, 156, 143, 0.12)",
             fill: true,
             tension: 0.3,
             pointRadius: 4,
             pointHoverRadius: 6,
-            pointBackgroundColor: "#0f766e",
+            pointBackgroundColor: "#277f74",
             pointBorderColor: "#fff",
             pointBorderWidth: 2,
             borderWidth: 2,
@@ -4253,8 +4147,8 @@
             {
               label: "Çalışma süresi",
               data: dataMin,
-              borderColor: "#0d9488",
-              backgroundColor: "rgba(13, 148, 136, 0.12)",
+              borderColor: "#2f9c8f",
+              backgroundColor: "rgba(47, 156, 143, 0.12)",
               borderWidth: 2,
               fill: true,
               tension: 0.25,
@@ -4975,6 +4869,121 @@
     if (page === "yeni" && el.bookSelect) populateBookSelect();
   }
 
+  var calendarMonthlyChart = null;
+
+  function renderCalendarMonthlyChart() {
+    var canvas = document.getElementById("calendar-chart-monthly");
+    if (!canvas || typeof Chart === "undefined") return;
+    var emptyEl = document.getElementById("calendar-chart-monthly-empty");
+    var wrapEl = document.getElementById("calendar-chart-monthly-wrap");
+
+    var labels = [];
+    var minutes = [];
+    var now = new Date();
+    var mi;
+    for (mi = 11; mi >= 0; mi--) {
+      var ref = new Date(now.getFullYear(), now.getMonth() - mi, 1);
+      var mStart = new Date(ref.getFullYear(), ref.getMonth(), 1);
+      var mEnd = new Date(ref.getFullYear(), ref.getMonth() + 1, 1);
+      var total = 0;
+      state.sessions.forEach(function (s) {
+        var cat = String(s.category || "").trim();
+        if (cat !== "english" && cat !== "technical" && cat !== "book") return;
+        var iso = sessionEffectiveTime(s);
+        if (!iso) return;
+        var t = new Date(iso);
+        if (isNaN(t.getTime()) || t < mStart || t >= mEnd) return;
+        total += s.durationMinutes || 0;
+      });
+      labels.push(MONTH_SHORT_TR[ref.getMonth()] + " " + String(ref.getFullYear()).slice(2));
+      minutes.push(total);
+    }
+
+    var sum = 0;
+    for (mi = 0; mi < minutes.length; mi++) sum += minutes[mi];
+
+    if (calendarMonthlyChart) {
+      calendarMonthlyChart.destroy();
+      calendarMonthlyChart = null;
+    }
+
+    if (sum <= 0) {
+      if (emptyEl) {
+        emptyEl.hidden = false;
+        emptyEl.textContent = "Son 12 ayda çalışma kaydı yok.";
+      }
+      if (wrapEl) wrapEl.hidden = true;
+      return;
+    }
+    if (emptyEl) emptyEl.hidden = true;
+    if (wrapEl) wrapEl.hidden = false;
+
+    calendarMonthlyChart = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "Çalışma",
+            data: minutes,
+            backgroundColor: "#2f9c8f",
+            hoverBackgroundColor: "#277f74",
+            borderWidth: 0,
+            borderRadius: 6,
+            borderSkipped: false,
+            maxBarThickness: 38,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 8 } },
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { font: { size: 11 }, color: "#475569" },
+          },
+          y: {
+            beginAtZero: true,
+            border: { display: false },
+            grid: { color: "rgba(148,163,184,0.18)" },
+            ticks: {
+              color: "#94a3b8",
+              font: { size: 11 },
+              padding: 6,
+              maxTicksLimit: 6,
+              callback: function (val) {
+                return val + " dk";
+              },
+            },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            usePointStyle: true,
+            padding: 12,
+            backgroundColor: "rgba(15,23,42,0.92)",
+            titleFont: { size: 13, weight: "600" },
+            bodyFont: { size: 12 },
+            callbacks: {
+              label: function (ctx) {
+                var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
+                var h = Math.floor(v / 60);
+                var mm = v % 60;
+                var hr = h > 0 ? h + " sa " + mm + " dk" : mm + " dk";
+                return "Toplam: " + v + " dk (" + hr + ")";
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   function initCalendarPage() {
     var calView = {
       y: new Date().getFullYear(),
@@ -5092,6 +5101,12 @@
       root.innerHTML = html.join("");
     }
 
+    function renderCalendarCharts() {
+      state = loadState();
+      renderCalendarMonthlyChart();
+      renderDashboardCharts();
+    }
+
     document.getElementById("cal-prev").addEventListener("click", function () {
       calView.m -= 1;
       if (calView.m < 0) {
@@ -5135,6 +5150,7 @@
           state.yds = mergeYds(state.yds);
           saveState(state);
           renderMonth();
+          renderCalendarCharts();
         } catch (err) {
           alert("Dosya okunamadı veya format uyumsuz.");
         }
@@ -5143,9 +5159,15 @@
       reader.readAsText(file);
     });
 
-    if (typeof window !== "undefined") window.__calismaCalendarRefresh = renderMonth;
+    if (typeof window !== "undefined") {
+      window.__calismaCalendarRefresh = function () {
+        renderMonth();
+        renderCalendarCharts();
+      };
+    }
 
     renderMonth();
+    renderCalendarCharts();
   }
 
   if (page === "dashboard") {
@@ -5480,7 +5502,6 @@
     bindExportClick();
     attachStandardImport();
     renderList();
-    renderDashboardCharts();
   } else if (page === "kitaplar") {
     bindExportClick();
     attachStandardImport();
@@ -5634,7 +5655,6 @@
     if (page === "dashboard") renderStats();
     else if (page === "gecmis") {
       renderList();
-      renderDashboardCharts();
     }
     else if (page === "kitaplar") renderKitaplarPage();
     else if (page === "yatirim") renderYatirimPage();
