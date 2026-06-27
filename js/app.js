@@ -3781,6 +3781,12 @@
     if (emptyWeekday) emptyWeekday.hidden = true;
     if (wrapWeekday) wrapWeekday.hidden = false;
 
+    var weekdayMax = 0;
+    for (wi = 0; wi < dataArr.length; wi++) {
+      if (dataArr[wi] > weekdayMax) weekdayMax = dataArr[wi];
+    }
+    var weekdayUseHours = weekdayMax >= 60;
+
     teknikWeekdayChart = new Chart(canvasWeekday, {
       type: "bar",
       data: {
@@ -3807,10 +3813,10 @@
           x: { grid: { display: false } },
           y: {
             beginAtZero: true,
-            title: { display: true, text: "Dakika" },
+            title: { display: true, text: weekdayUseHours ? "Saat" : "Dakika" },
             ticks: {
               callback: function (v) {
-                return v + " dk";
+                return weekdayUseHours ? formatHoursAxisTick(v) : v + " dk";
               },
             },
           },
@@ -3827,7 +3833,7 @@
               },
               label: function (ctx) {
                 var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
-                return "Toplam: " + v + " dk";
+                return "Toplam: " + formatMinutesAsHours(v);
               },
             },
           },
