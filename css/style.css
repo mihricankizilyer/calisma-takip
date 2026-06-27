@@ -2726,6 +2726,17 @@ body {
   color: var(--text);
 }
 
+.chart-card__sub {
+  margin: -0.35rem 0 0.65rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.chart-card__title + .chart-card__sub {
+  margin-top: -0.45rem;
+}
+
 .chart-card__head {
   display: flex;
   align-items: center;

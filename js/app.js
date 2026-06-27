@@ -973,13 +973,23 @@
       ? monthlyStudyWeights(dashNow.getFullYear(), dashNow.getMonth())
       : weeklyChartWeights();
     var distTitleEl = document.getElementById("dash-dist-title");
+    var distTotalEl = document.getElementById("dash-dist-total");
     if (distTitleEl) distTitleEl.textContent = dashPeriod === "month" ? "Bu ay kategori dağılımı" : "Bu hafta kategori dağılımı";
     if (canvasWeek) {
       var cardW = canvasWeek.closest(".chart-card");
       if (w.total <= 0) {
         toggleChartCardEmpty(cardW, true, dashPeriod === "month" ? "Bu ay henüz kayıt yok." : "Bu hafta henüz kayıt yok.");
+        if (distTotalEl) distTotalEl.hidden = true;
       } else {
         toggleChartCardEmpty(cardW, false, "");
+        var studyMin = (w.en || 0) + (w.tech || 0) + (w.book || 0);
+        if (distTotalEl) {
+          var totalParts = [];
+          if (studyMin > 0) totalParts.push(formatMinutesAsHours(studyMin));
+          if (w.inv > 0) totalParts.push(w.inv + " işlem");
+          distTotalEl.textContent = totalParts.length ? "Toplam · " + totalParts.join(" · ") : "";
+          distTotalEl.hidden = !totalParts.length;
+        }
         var labelsW = [];
         var dataW = [];
         var colorsW = [];
@@ -1005,7 +1015,6 @@
         }
         dashboardChartWeek = new Chart(canvasWeek, {
           type: "doughnut",
-          plugins: [dashDoughnutHoursPlugin()],
           data: {
             labels: labelsW,
             datasets: [
@@ -1036,6 +1045,26 @@
                   padding: 14,
                   font: { size: 12 },
                   color: "#94a3b8",
+                  generateLabels: function (chart) {
+                    var data = chart.data;
+                    if (!data.labels || !data.labels.length || !data.datasets.length) {
+                      return Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                    }
+                    var dsMeta = chart.getDatasetMeta(0);
+                    return data.labels.map(function (label, i) {
+                      var style = dsMeta.controller.getStyle(i);
+                      var val = data.datasets[0].data[i] || 0;
+                      return {
+                        text: label + " · " + dashDoughnutValueLabel(label, val),
+                        fillStyle: style.backgroundColor,
+                        strokeStyle: style.borderColor,
+                        lineWidth: style.borderWidth,
+                        hidden: !chart.getDataVisibility(i),
+                        index: i,
+                        datasetIndex: 0,
+                      };
+                    });
+                  },
                 },
               },
               tooltip: {
@@ -1048,13 +1077,12 @@
                   label: function (ctx) {
                     var v = ctx.raw != null ? ctx.raw : 0;
                     var lb = ctx.label || "";
+                    var lbls = ctx.chart.data.labels || [];
                     var arr = ctx.dataset.data || [];
-                    var tot = 0;
-                    var qi;
-                    for (qi = 0; qi < arr.length; qi++) tot += arr[qi] || 0;
-                    var pct = tot > 0 ? Math.round((v / tot) * 100) : 0;
-                    if (lb === "Yatırım") return "  Yatırım: " + v + " işlem (" + pct + "%)";
-                    return "  " + lb + ": " + formatMinutesAsHours(v) + " (" + pct + "%)";
+                    var totals = dashDoughnutTotals(arr, lbls);
+                    if (lb === "Yatırım") return "  Yatırım: " + v + " işlem";
+                    var pct = totals.sumMin > 0 ? Math.round((v / totals.sumMin) * 100) : 0;
+                    return "  " + lb + ": " + formatMinutesAsHours(v) + " (çalışma süresinin %" + pct + "'i)";
                   },
                 },
               },
@@ -1113,7 +1141,7 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 22 } },
+            layout: { padding: { top: 16 } },
             interaction: { mode: "index", intersect: false },
             scales: {
               x: {
@@ -1234,7 +1262,7 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 22 } },
+            layout: { padding: { top: 16 } },
             interaction: { mode: "index", intersect: false },
             scales: {
               x: {
@@ -1367,7 +1395,7 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 22 } },
+            layout: { padding: { top: 16 } },
             categoryPercentage: 0.62,
             barPercentage: 0.9,
             interaction: { mode: "index", intersect: false },
@@ -1770,37 +1798,50 @@
     return (Math.round(h * 10) / 10).toString().replace(".", ",") + " sa";
   }
 
-  /** Halka grafik dilimlerinde saat / işlem etiketi. */
-  function dashDoughnutHoursPlugin() {
-    return {
-      id: "dashDoughnutHours",
-      afterDatasetsDraw: function (chart) {
-        var ctx = chart.ctx;
-        var meta = chart.getDatasetMeta(0);
-        if (!meta || !meta.data) return;
-        var arr = (chart.data.datasets[0] && chart.data.datasets[0].data) || [];
-        var lbls = chart.data.labels || [];
-        ctx.save();
-        ctx.font = "600 10px 'DM Sans', system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.shadowColor = "rgba(15, 23, 42, 0.22)";
-        ctx.shadowBlur = 2;
-        meta.data.forEach(function (arc, idx) {
-          var val = arr[idx] || 0;
-          if (val <= 0) return;
-          var lb = lbls[idx] || "";
-          var text = lb === "Yatırım" ? val + " işl." : formatMinutesAsHours(val);
-          var pos = arc.tooltipPosition();
-          ctx.fillStyle = lb === "Kitap" ? "rgba(15, 23, 42, 0.78)" : "rgba(255, 255, 255, 0.95)";
-          ctx.fillText(text, pos.x, pos.y);
-        });
-        ctx.restore();
-      },
-    };
+  /** Grafik üzeri etiketler için kısa süre metni (45dk, 2sa, 2sa30). */
+  function formatMinutesChartLabel(m) {
+    var n = Number(m);
+    if (isNaN(n) || n <= 0) return "";
+    if (n < 60) return Math.round(n) + "dk";
+    var h = Math.floor(n / 60);
+    var rem = Math.round(n % 60);
+    if (rem === 0) return h + "sa";
+    if (rem < 8) return h + "sa";
+    return h + "sa" + rem;
   }
 
-  /** Yığılmış çubuk grafiklerde her sütunun üstünde toplam saat. */
+  /** Grafik üzeri soluk süre etiketi — arka plansız, küçük punt. */
+  function dashDrawSubtleLabel(ctx, text, x, y, opts) {
+    if (!text) return;
+    opts = opts || {};
+    var dark = isDarkTheme();
+    ctx.font = opts.font || "500 9px 'DM Sans', system-ui, sans-serif";
+    ctx.fillStyle =
+      opts.color ||
+      (dark ? "rgba(148, 163, 184, 0.65)" : "rgba(100, 116, 139, 0.62)");
+    ctx.textAlign = "center";
+    ctx.textBaseline = opts.baseline || "bottom";
+    ctx.fillText(text, x, y);
+  }
+
+  /** Halka grafik verisi — çalışma dakikası ve yatırım işlem sayısı ayrı. */
+  function dashDoughnutTotals(arr, lbls) {
+    var sumMin = 0;
+    var invCount = 0;
+    var ti;
+    for (ti = 0; ti < arr.length; ti++) {
+      if ((lbls[ti] || "") === "Yatırım") invCount += arr[ti] || 0;
+      else sumMin += arr[ti] || 0;
+    }
+    return { sumMin: sumMin, invCount: invCount };
+  }
+
+  function dashDoughnutValueLabel(label, value) {
+    if (label === "Yatırım") return value + " işl";
+    return formatMinutesChartLabel(value);
+  }
+
+  /** Yığılmış çubuk — sütun üstünde soluk toplam. */
   function dashStackedTotalLabelsPlugin() {
     return {
       id: "dashStackedTotalLabels",
@@ -1808,18 +1849,16 @@
         var ctx = chart.ctx;
         var datasets = chart.data.datasets;
         var lblCount = (chart.data.labels && chart.data.labels.length) || 0;
-        if (!datasets || !lblCount) return;
+        var area = chart.chartArea;
+        if (!datasets || !lblCount || !area) return;
         ctx.save();
-        ctx.font = "600 10px 'DM Sans', system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillStyle = chartTheme().text;
         var xi;
         for (xi = 0; xi < lblCount; xi++) {
           var sumMin = 0;
           var invCount = 0;
           var topY = null;
           var centerX = null;
+          var stackH = 0;
           var di;
           for (di = 0; di < datasets.length; di++) {
             var meta = chart.getDatasetMeta(di);
@@ -1829,22 +1868,24 @@
             if (dsLabel === "Yatırım") invCount += val;
             else sumMin += val;
             if (val > 0 && meta.data[xi]) {
-              var props = meta.data[xi].getProps(["x", "y"], true);
+              var props = meta.data[xi].getProps(["x", "y", "base"], true);
               centerX = props.x;
               if (topY === null || props.y < topY) topY = props.y;
+              stackH = Math.max(stackH, Math.abs(props.base - props.y));
             }
           }
           if (topY === null || (sumMin <= 0 && invCount <= 0)) continue;
-          var txt = sumMin > 0 ? formatMinutesAsHours(sumMin) : "";
-          if (invCount > 0) txt += (txt ? " · " : "") + invCount + " işl.";
-          ctx.fillText(txt, centerX, topY - 5);
+          if (stackH < 18 || topY < area.top + 12) continue;
+          var txt = sumMin > 0 ? formatMinutesChartLabel(sumMin) : "";
+          if (invCount > 0) txt += (txt ? " · " : "") + invCount + " işl";
+          dashDrawSubtleLabel(ctx, txt, centerX, topY - 2);
         }
         ctx.restore();
       },
     };
   }
 
-  /** Gruplu çubuk grafiklerde her çubuğun üstünde saat. */
+  /** Gruplu çubuk — çubuk üstünde soluk süre. */
   function dashGroupedBarLabelsPlugin() {
     return {
       id: "dashGroupedBarLabels",
@@ -1852,22 +1893,21 @@
         var ctx = chart.ctx;
         var datasets = chart.data.datasets;
         var catLabels = chart.data.labels || [];
-        if (!datasets) return;
+        var area = chart.chartArea;
+        if (!datasets || !area) return;
         ctx.save();
-        ctx.font = "600 10px 'DM Sans', system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillStyle = chartTheme().text;
         datasets.forEach(function (ds, di) {
           var meta = chart.getDatasetMeta(di);
           if (meta.hidden) return;
           meta.data.forEach(function (bar, xi) {
             var val = ds.data[xi];
             if (!val || val <= 0) return;
+            var props = bar.getProps(["x", "y", "base"], true);
+            var barH = Math.abs(props.base - props.y);
+            if (barH < 18 || props.y < area.top + 12) return;
             var cat = catLabels[xi] || "";
-            var text = cat === "Yatırım" ? val + " işl." : formatMinutesAsHours(val);
-            var props = bar.getProps(["x", "y"], true);
-            ctx.fillText(text, props.x, props.y - 4);
+            var text = cat === "Yatırım" ? val + " işl" : formatMinutesChartLabel(val);
+            dashDrawSubtleLabel(ctx, text, props.x, props.y - 2);
           });
         });
         ctx.restore();
