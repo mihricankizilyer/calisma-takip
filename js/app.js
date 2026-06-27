@@ -1128,7 +1128,7 @@
         toggleChartCardEmpty(cardD, false, "");
         dashboardChartDaily = new Chart(canvasDaily, {
           type: "bar",
-          plugins: [dashStackedTotalLabelsPlugin()],
+          plugins: dashPeriod === "month" ? [] : [dashStackedTotalLabelsPlugin()],
           data: {
             labels: labels7,
             datasets: [
@@ -2648,6 +2648,11 @@
 
   function applyBookMetaEdit(bookId, title, author, totalPagesRaw) {
     if (!bookId) return false;
+    var isFinished = false;
+    state.books.forEach(function (b) {
+      if (b.id === bookId && b.finishedAt) isFinished = true;
+    });
+    if (isFinished) return false;
     var t = (title || "").trim();
     if (!t) {
       alert("Kitap adı boş olamaz.");
@@ -3264,7 +3269,7 @@
 
     if (finished.length === 0) {
       finishedEl.innerHTML =
-        '<tr><td colspan="10" class="kitaplar-empty-cell"><p class="kitaplar-empty-msg">Kayıt yok. <a href="yeni-kayit.html">Okuma ekle</a></p></td></tr>';
+        '<tr><td colspan="9" class="kitaplar-empty-cell"><p class="kitaplar-empty-msg">Kayıt yok. <a href="yeni-kayit.html">Okuma ekle</a></p></td></tr>';
     } else {
       finishedEl.innerHTML = finished
         .map(function (b) {
@@ -3278,17 +3283,9 @@
           }
           return (
             "<tr><td>" +
-            '<input type="text" class="book-edit-title" data-book-id="' +
-            escapeHtml(b.id) +
-            '" value="' +
             escapeHtml(b.title) +
-            '" />' +
             "</td><td>" +
-            '<input type="text" class="book-edit-author" data-book-id="' +
-            escapeHtml(b.id) +
-            '" value="' +
-            escapeHtml(b.author || "") +
-            '" />' +
+            escapeHtml(b.author || "—") +
             "</td><td>" +
             formatDateOnly(b.startedAt) +
             "</td><td>" +
@@ -3298,19 +3295,10 @@
             " dk</td><td>" +
             pages +
             " syf</td><td>" +
-            '<input type="number" min="1" class="book-edit-pages" data-book-id="' +
-            escapeHtml(b.id) +
-            '" value="' +
-            (b.totalPages ? String(b.totalPages) : "") +
-            '" />' +
+            (b.totalPages ? String(b.totalPages) : "—") +
             "</td><td>" +
             days +
             '</td><td class="kitaplar-td--icon">' +
-            '<button type="button" class="btn-icon btn-icon--save book-meta-save" data-book-id="' +
-            escapeHtml(b.id) +
-            '" aria-label="Bilgileri kaydet">' +
-            BOOK_ICON_SAVE_SVG +
-            "</button></td><td class=\"kitaplar-td--icon\">" +
             '<button type="button" class="btn-icon btn-icon--danger" data-book-delete="' +
             escapeHtml(b.id) +
             '" aria-label="Kitabı ve okuma kayıtlarını sil">' +
@@ -6299,18 +6287,6 @@
     if (finBody && !finBody.dataset.bookDeleteBound) {
       finBody.dataset.bookDeleteBound = "1";
       finBody.addEventListener("click", function (e) {
-        var save = e.target.closest(".book-meta-save");
-        if (save) {
-          var bidSave = save.getAttribute("data-book-id");
-          if (!bidSave) return;
-          var tr = save.closest("tr");
-          if (!tr) return;
-          var ti = tr.querySelector(".book-edit-title");
-          var au = tr.querySelector(".book-edit-author");
-          var tp = tr.querySelector(".book-edit-pages");
-          applyBookMetaEdit(bidSave, ti ? ti.value : "", au ? au.value : "", tp ? tp.value : "");
-          return;
-        }
         var del = e.target.closest("[data-book-delete]");
         if (!del) return;
         var bid = del.getAttribute("data-book-delete");
