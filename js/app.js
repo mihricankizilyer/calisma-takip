@@ -3,6 +3,89 @@
 
   var STORAGE_KEY = "calismaTakip_v1";
 
+  function cssVar(name, fallback) {
+    try {
+      var v = getComputedStyle(document.documentElement).getPropertyValue(name);
+      v = v && v.trim();
+      return v || fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function isDarkTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark";
+  }
+
+  /** Kategori renkleri — tüm grafiklerde tutarlı (CSS değişkenlerinden okur). */
+  function chartCategoryColors() {
+    return {
+      en: cssVar("--accent-en", "#5cc4b7"),
+      tech: cssVar("--accent-tech", "#9aa0f5"),
+      book: cssVar("--accent-book", "#f6c469"),
+      inv: cssVar("--accent-invest", "#5fd3aa"),
+      streak: cssVar("--streak", "#f97316"),
+    };
+  }
+
+  /** Ana sayfa grafikleri — yumuşak ama okunaklı kategori paleti. */
+  function dashCatColors() {
+    return {
+      en: "#4DB6AC",
+      tech: "#9588E8",
+      book: "#E5B84C",
+      inv: "#4EC992",
+      enSoft: "rgba(77, 182, 172, 0.88)",
+      techSoft: "rgba(149, 136, 232, 0.88)",
+      bookSoft: "rgba(229, 184, 76, 0.88)",
+      invSoft: "rgba(78, 201, 146, 0.88)",
+      enHover: "rgba(56, 162, 152, 0.96)",
+      techHover: "rgba(130, 116, 220, 0.96)",
+      bookHover: "rgba(212, 165, 40, 0.96)",
+      invHover: "rgba(60, 180, 130, 0.96)",
+      enPrev: "rgba(77, 182, 172, 0.38)",
+      techPrev: "rgba(149, 136, 232, 0.38)",
+      bookPrev: "rgba(229, 184, 76, 0.38)",
+      invPrev: "rgba(78, 201, 146, 0.38)",
+      prevHover: "rgba(100, 116, 139, 0.55)",
+      curPeriod: "rgba(77, 182, 172, 0.88)",
+      curPeriodHover: "rgba(56, 162, 152, 0.96)",
+      prevPeriod: "rgba(148, 163, 184, 0.52)",
+      prevPeriodHover: "rgba(100, 116, 139, 0.68)",
+      grid: "rgba(148, 163, 184, 0.14)",
+    };
+  }
+
+  /** Aktif temaya göre eksen/grid/tooltip renkleri. */
+  function chartTheme() {
+    var dark = isDarkTheme();
+    return {
+      text: cssVar("--text", dark ? "#e8edf6" : "#0f172a"),
+      muted: cssVar("--muted", dark ? "#94a3b8" : "#64748b"),
+      grid: dark ? "rgba(148, 163, 184, 0.16)" : "rgba(100, 116, 139, 0.14)",
+      tooltipBg: dark ? "rgba(2, 6, 23, 0.94)" : "rgba(15, 23, 42, 0.92)",
+      surface: cssVar("--surface", dark ? "#131d31" : "#ffffff"),
+    };
+  }
+
+  /** Chart.js global varsayılanlarını temaya göre ayarlar (tüm grafikler etkilenir). */
+  function applyChartDefaults() {
+    if (typeof Chart === "undefined") return;
+    var th = chartTheme();
+    Chart.defaults.font.family = '"DM Sans", system-ui, sans-serif';
+    Chart.defaults.color = th.muted;
+    Chart.defaults.borderColor = th.grid;
+    if (Chart.defaults.plugins && Chart.defaults.plugins.tooltip) {
+      Chart.defaults.plugins.tooltip.backgroundColor = th.tooltipBg;
+      Chart.defaults.plugins.tooltip.titleColor = "#f8fafc";
+      Chart.defaults.plugins.tooltip.bodyColor = "#e2e8f0";
+      Chart.defaults.plugins.tooltip.padding = 12;
+      Chart.defaults.plugins.tooltip.usePointStyle = true;
+      Chart.defaults.plugins.tooltip.cornerRadius = 8;
+      Chart.defaults.plugins.tooltip.boxPadding = 4;
+    }
+  }
+
   function defaultYds() {
     return {
       examDate: "",
@@ -336,6 +419,116 @@
     return { labels: labels, data: data, total: cum };
   }
 
+  function cumulativeEnglishQuestionsByDay(programStartKey) {
+    var dayQ = {};
+    state.sessions.forEach(function (s) {
+      if (String(s.category || "").trim() !== "english") return;
+      var iso = sessionEffectiveTime(s);
+      if (!iso) return;
+      var k = dateKeyLocal(new Date(iso));
+      if (programStartKey && k < programStartKey) return;
+      dayQ[k] = (dayQ[k] || 0) + englishSessionQuestionCount(s);
+    });
+    var keys = Object.keys(dayQ).sort();
+    var labels = [];
+    var data = [];
+    var cum = 0;
+    var ki;
+    for (ki = 0; ki < keys.length; ki++) {
+      cum += dayQ[keys[ki]];
+      labels.push(keys[ki].slice(5).replace("-", "/"));
+      data.push(cum);
+    }
+    return { labels: labels, data: data, total: cum };
+  }
+
+  function cumulativeEnglishProgressByDay(programStartKey) {
+    var dayMin = {};
+    var dayQ = {};
+    state.sessions.forEach(function (s) {
+      if (String(s.category || "").trim() !== "english") return;
+      var iso = sessionEffectiveTime(s);
+      if (!iso) return;
+      var k = dateKeyLocal(new Date(iso));
+      if (programStartKey && k < programStartKey) return;
+      var dm = s.durationMinutes || 0;
+      if (dm > 0) dayMin[k] = (dayMin[k] || 0) + dm;
+      var q = englishSessionQuestionCount(s);
+      if (q > 0) dayQ[k] = (dayQ[k] || 0) + q;
+    });
+    var keySet = {};
+    Object.keys(dayMin).forEach(function (k) { keySet[k] = true; });
+    Object.keys(dayQ).forEach(function (k) { keySet[k] = true; });
+    var keys = Object.keys(keySet).sort();
+    var labels = [];
+    var dataMin = [];
+    var dataQ = [];
+    var cumM = 0;
+    var cumQ = 0;
+    var ki;
+    for (ki = 0; ki < keys.length; ki++) {
+      cumM += dayMin[keys[ki]] || 0;
+      cumQ += dayQ[keys[ki]] || 0;
+      labels.push(keys[ki].slice(5).replace("-", "/"));
+      dataMin.push(cumM);
+      dataQ.push(cumQ);
+    }
+    return { labels: labels, dataMin: dataMin, dataQ: dataQ, totalMin: cumM, totalQ: cumQ };
+  }
+
+  function ydsSubtypeColorMap() {
+    return {
+      calisma: "#60a5fa",
+      grammar: "#7dd3fc",
+      cloze: "#a78bfa",
+      tr_eng: "#c4b5fd",
+      eng_tr: "#818cf8",
+      passage: "#fbbf24",
+      listening: "#22d3ee",
+      paragraf: "#fb923c",
+      kelime: "#34d399",
+    };
+  }
+
+  function ydsSubtypeCutoffDate(period) {
+    if (period === "all") return new Date(0);
+    var cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    var days = period === "7" ? 7 : 28;
+    cutoff.setDate(cutoff.getDate() - days);
+    return cutoff;
+  }
+
+  function buildYdsSubtypeSeries(period) {
+    var cutoff = ydsSubtypeCutoffDate(period);
+    var rawAgg = englishSubtypeMinutesSince(cutoff);
+    if (rawAgg.deneme != null) delete rawAgg.deneme;
+    var colors = ydsSubtypeColorMap();
+    var order = ["calisma", "grammar", "cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "kelime"];
+    var labels = [];
+    var data = [];
+    var bg = [];
+    var oi;
+    for (oi = 0; oi < order.length; oi++) {
+      var key = order[oi];
+      var m = rawAgg[key] || 0;
+      if (m <= 0) continue;
+      labels.push(enSubtypeLabels[key] || key);
+      data.push(m);
+      bg.push(colors[key] || "#64748b");
+    }
+    Object.keys(rawAgg).forEach(function (key) {
+      if (key === "deneme") return;
+      if (order.indexOf(key) >= 0) return;
+      var m2 = rawAgg[key] || 0;
+      if (m2 <= 0) return;
+      labels.push(enSubtypeLabels[key] || key);
+      data.push(m2);
+      bg.push(colors[key] || "#64748b");
+    });
+    return { labels: labels, data: data, bg: bg };
+  }
+
   function dateKeyLocal(d) {
     var y = d.getFullYear();
     var m = String(d.getMonth() + 1);
@@ -621,7 +814,7 @@
     );
   }
 
-  var INV_CHART_COLORS = ["#2f9c8f", "#8a7ad6", "#d2814f", "#5fa777", "#5bb0d6", "#d9b14e", "#cf6f68", "#7d8ad6", "#cf7aae"];
+  var INV_CHART_COLORS = ["#5cc4b7", "#9aa0f5", "#d2814f", "#5fa777", "#5bb0d6", "#d9b14e", "#cf6f68", "#7d8ad6", "#cf7aae"];
 
   function drawDonutPercentLabels(svg, entries, volume) {
     if (!svg) return;
@@ -772,11 +965,19 @@
     destroyDashboardCharts();
     if (typeof Chart === "undefined") return;
 
-    var w = weeklyChartWeights();
+    var dc = dashCatColors();
+    var dashPeriod = sessionStorage.getItem("dashChartsPeriod") === "month" ? "month" : "week";
+    var dashNow = new Date();
+
+    var w = dashPeriod === "month"
+      ? monthlyStudyWeights(dashNow.getFullYear(), dashNow.getMonth())
+      : weeklyChartWeights();
+    var distTitleEl = document.getElementById("dash-dist-title");
+    if (distTitleEl) distTitleEl.textContent = dashPeriod === "month" ? "Bu ay kategori dağılımı" : "Bu hafta kategori dağılımı";
     if (canvasWeek) {
       var cardW = canvasWeek.closest(".chart-card");
       if (w.total <= 0) {
-        toggleChartCardEmpty(cardW, true, "Bu hafta henüz kayıt yok.");
+        toggleChartCardEmpty(cardW, true, dashPeriod === "month" ? "Bu ay henüz kayıt yok." : "Bu hafta henüz kayıt yok.");
       } else {
         toggleChartCardEmpty(cardW, false, "");
         var labelsW = [];
@@ -785,36 +986,37 @@
         if (w.en > 0) {
           labelsW.push("YDS");
           dataW.push(w.en);
-          colorsW.push("#2f9c8f");
+          colorsW.push(dc.en);
         }
         if (w.tech > 0) {
           labelsW.push("Teknik");
           dataW.push(w.tech);
-          colorsW.push("#8a7ad6");
+          colorsW.push(dc.tech);
         }
         if (w.book > 0) {
           labelsW.push("Kitap");
           dataW.push(w.book);
-          colorsW.push("#dca15a");
+          colorsW.push(dc.book);
         }
         if (w.inv > 0) {
           labelsW.push("Yatırım");
           dataW.push(w.inv);
-          colorsW.push("#5b86d6");
+          colorsW.push(dc.inv);
         }
         dashboardChartWeek = new Chart(canvasWeek, {
           type: "doughnut",
+          plugins: [dashDoughnutHoursPlugin()],
           data: {
             labels: labelsW,
             datasets: [
               {
                 data: dataW,
                 backgroundColor: colorsW,
-                borderColor: "#ffffff",
-                borderWidth: 3,
-                borderRadius: 6,
-                hoverOffset: 8,
-                spacing: 2,
+                borderColor: chartTheme().surface,
+                borderWidth: 2,
+                borderRadius: 8,
+                hoverOffset: 5,
+                spacing: 3,
               },
             ],
           },
@@ -833,7 +1035,7 @@
                   boxHeight: 8,
                   padding: 14,
                   font: { size: 12 },
-                  color: "#334155",
+                  color: "#94a3b8",
                 },
               },
               tooltip: {
@@ -852,7 +1054,7 @@
                     for (qi = 0; qi < arr.length; qi++) tot += arr[qi] || 0;
                     var pct = tot > 0 ? Math.round((v / tot) * 100) : 0;
                     if (lb === "Yatırım") return "  Yatırım: " + v + " işlem (" + pct + "%)";
-                    return "  " + lb + ": " + v + " dk (" + pct + "%)";
+                    return "  " + lb + ": " + formatMinutesAsHours(v) + " (" + pct + "%)";
                   },
                 },
               },
@@ -862,6 +1064,10 @@
       }
     }
 
+    var dailyDays = dashPeriod === "month" ? 30 : 7;
+    var dailyBarMax = dashPeriod === "month" ? 14 : 26;
+    var trendTitleEl = document.getElementById("dash-trend-title");
+    if (trendTitleEl) trendTitleEl.textContent = dashPeriod === "month" ? "Son 30 gün" : "Son 7 gün";
     if (canvasDaily) {
       var maps = dayCategoryMapsForCharts();
       var labels7 = [];
@@ -871,7 +1077,7 @@
       var dInv = [];
       var i;
       var dailySum = 0;
-      for (i = 6; i >= 0; i--) {
+      for (i = dailyDays - 1; i >= 0; i--) {
         var d = new Date();
         d.setHours(0, 0, 0, 0);
         d.setDate(d.getDate() - i);
@@ -889,44 +1095,46 @@
       }
       var cardD = canvasDaily.closest(".chart-card");
       if (dailySum <= 0) {
-        toggleChartCardEmpty(cardD, true, "Son 7 günde kayıt yok.");
+        toggleChartCardEmpty(cardD, true, dashPeriod === "month" ? "Son 30 günde kayıt yok." : "Son 7 günde kayıt yok.");
       } else {
         toggleChartCardEmpty(cardD, false, "");
         dashboardChartDaily = new Chart(canvasDaily, {
           type: "bar",
+          plugins: [dashStackedTotalLabelsPlugin()],
           data: {
             labels: labels7,
             datasets: [
-              { label: "YDS", data: dEn, backgroundColor: "#2f9c8f", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
-              { label: "Teknik", data: dTech, backgroundColor: "#8a7ad6", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
-              { label: "Kitap", data: dBook, backgroundColor: "#dca15a", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
-              { label: "Yatırım", data: dInv, backgroundColor: "#5b86d6", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 },
+              { label: "YDS", data: dEn, backgroundColor: dc.enSoft, borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: dailyBarMax },
+              { label: "Teknik", data: dTech, backgroundColor: dc.techSoft, borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: dailyBarMax },
+              { label: "Kitap", data: dBook, backgroundColor: dc.bookSoft, borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: dailyBarMax },
+              { label: "Yatırım", data: dInv, backgroundColor: dc.invSoft, borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: dailyBarMax },
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 8 } },
+            layout: { padding: { top: 22 } },
             interaction: { mode: "index", intersect: false },
             scales: {
               x: {
                 stacked: true,
                 grid: { display: false },
                 border: { display: false },
-                ticks: { font: { size: 11 }, color: "#475569" },
+                ticks: { font: { size: 11 }, color: "#94a3b8" },
               },
               y: {
                 stacked: true,
                 beginAtZero: true,
                 border: { display: false },
-                grid: { color: "rgba(148,163,184,0.18)" },
+                grid: { color: dc.grid },
+                title: { display: true, text: "Saat", font: { size: 11 }, color: "#94a3b8" },
                 ticks: {
                   color: "#94a3b8",
                   font: { size: 11 },
                   padding: 6,
                   maxTicksLimit: 5,
                   callback: function (val) {
-                    return String(val);
+                    return formatHoursAxisTick(val);
                   },
                 },
               },
@@ -941,7 +1149,7 @@
                   boxHeight: 8,
                   padding: 14,
                   font: { size: 12 },
-                  color: "#334155",
+                  color: "#94a3b8",
                 },
               },
               tooltip: {
@@ -956,7 +1164,7 @@
                     var v = context.parsed.y != null ? context.parsed.y : 0;
                     if (v === 0) return null;
                     if (label === "Yatırım") return "  " + label + ": " + v + " işlem";
-                    return "  " + label + ": " + v + " dk";
+                    return "  " + label + ": " + formatMinutesAsHours(v);
                   },
                 },
               },
@@ -966,27 +1174,41 @@
       }
     }
 
+    var longTitleEl = document.getElementById("dash-long-title");
+    if (longTitleEl) longTitleEl.textContent = dashPeriod === "month" ? "Son 6 ay (kategori)" : "Son 8 hafta (kategori)";
     if (canvas8) {
       if (gecmisChart8Week) {
         gecmisChart8Week.destroy();
         gecmisChart8Week = null;
       }
-      var endW8 = startOfWeekMonday(new Date());
       var labels8 = [];
       var wEn = [];
       var wTech = [];
       var wBook = [];
       var wInv = [];
       var wi;
-      for (wi = 7; wi >= 0; wi--) {
-        var mon8 = new Date(endW8);
-        mon8.setDate(mon8.getDate() - wi * 7);
-        var t8 = weeklyStudyWeightsMonday(mon8);
-        labels8.push(mon8.getDate() + " " + MONTH_SHORT_TR[mon8.getMonth()]);
-        wEn.push(t8.en);
-        wTech.push(t8.tech);
-        wBook.push(t8.book);
-        wInv.push(t8.inv);
+      if (dashPeriod === "month") {
+        for (wi = 5; wi >= 0; wi--) {
+          var md = new Date(dashNow.getFullYear(), dashNow.getMonth() - wi, 1);
+          var tM = monthlyStudyWeights(md.getFullYear(), md.getMonth());
+          labels8.push(MONTH_SHORT_TR[md.getMonth()] + " " + String(md.getFullYear()).slice(2));
+          wEn.push(tM.en);
+          wTech.push(tM.tech);
+          wBook.push(tM.book);
+          wInv.push(tM.inv);
+        }
+      } else {
+        var endW8 = startOfWeekMonday(new Date());
+        for (wi = 7; wi >= 0; wi--) {
+          var mon8 = new Date(endW8);
+          mon8.setDate(mon8.getDate() - wi * 7);
+          var t8 = weeklyStudyWeightsMonday(mon8);
+          labels8.push(mon8.getDate() + " " + MONTH_SHORT_TR[mon8.getMonth()]);
+          wEn.push(t8.en);
+          wTech.push(t8.tech);
+          wBook.push(t8.book);
+          wInv.push(t8.inv);
+        }
       }
       var sum8 = 0;
       for (wi = 0; wi < wEn.length; wi++) {
@@ -994,44 +1216,46 @@
       }
       var card8 = canvas8.closest(".chart-card");
       if (sum8 <= 0) {
-        toggleChartCardEmpty(card8, true, "Son 8 haftada kayıt yok.");
+        toggleChartCardEmpty(card8, true, dashPeriod === "month" ? "Son 6 ayda kayıt yok." : "Son 8 haftada kayıt yok.");
       } else {
         toggleChartCardEmpty(card8, false, "");
         gecmisChart8Week = new Chart(canvas8, {
           type: "bar",
+          plugins: [dashStackedTotalLabelsPlugin()],
           data: {
             labels: labels8,
             datasets: [
-              { label: "YDS", data: wEn, backgroundColor: "#2f9c8f", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
-              { label: "Teknik", data: wTech, backgroundColor: "#8a7ad6", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
-              { label: "Kitap", data: wBook, backgroundColor: "#dca15a", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
-              { label: "Yatırım", data: wInv, backgroundColor: "#5b86d6", borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "YDS", data: wEn, backgroundColor: dc.enSoft, borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "Teknik", data: wTech, backgroundColor: dc.techSoft, borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "Kitap", data: wBook, backgroundColor: dc.bookSoft, borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
+              { label: "Yatırım", data: wInv, backgroundColor: dc.invSoft, borderWidth: 0, borderRadius: 4, borderSkipped: false, maxBarThickness: 40 },
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 8 } },
+            layout: { padding: { top: 22 } },
             interaction: { mode: "index", intersect: false },
             scales: {
               x: {
                 stacked: true,
                 grid: { display: false },
                 border: { display: false },
-                ticks: { font: { size: 11 }, color: "#475569" },
+                ticks: { font: { size: 11 }, color: "#94a3b8" },
               },
               y: {
                 stacked: true,
                 beginAtZero: true,
                 border: { display: false },
-                grid: { color: "rgba(148,163,184,0.18)" },
+                grid: { color: dc.grid },
+                title: { display: true, text: "Saat", font: { size: 11 }, color: "#94a3b8" },
                 ticks: {
                   color: "#94a3b8",
                   font: { size: 11 },
                   padding: 6,
                   maxTicksLimit: 6,
                   callback: function (val) {
-                    return String(val);
+                    return formatHoursAxisTick(val);
                   },
                 },
               },
@@ -1046,7 +1270,7 @@
                   boxHeight: 8,
                   padding: 14,
                   font: { size: 12 },
-                  color: "#334155",
+                  color: "#94a3b8",
                 },
               },
               tooltip: {
@@ -1061,7 +1285,7 @@
                     var v = context.parsed.y != null ? context.parsed.y : 0;
                     if (v === 0) return null;
                     if (label === "Yatırım") return "  " + label + ": " + v + " işlem";
-                    return "  " + label + ": " + v + " dk";
+                    return "  " + label + ": " + formatMinutesAsHours(v);
                   },
                 },
               },
@@ -1080,7 +1304,8 @@
     destroyDashboardIndexCharts();
     if (typeof Chart === "undefined") return;
 
-    var mode = sessionStorage.getItem("dashCompareMode") === "month" ? "month" : "week";
+    var dc = dashCatColors();
+    var mode = sessionStorage.getItem("dashChartsPeriod") === "month" ? "month" : "week";
     var thisW, prevW, curLabel, prevLabel, emptyMsg;
     if (mode === "month") {
       var now = new Date();
@@ -1113,14 +1338,15 @@
         toggleChartCardEmpty(cardCmp, false, "");
         dashboardChartWeekCompare = new Chart(cCmp, {
           type: "bar",
+          plugins: [dashGroupedBarLabelsPlugin()],
           data: {
             labels: ["YDS", "Teknik", "Kitap", "Yatırım"],
             datasets: [
               {
                 label: curLabel,
                 data: [thisW.en, thisW.tech, thisW.book, thisW.inv],
-                backgroundColor: "#2f9c8f",
-                hoverBackgroundColor: "#277f74",
+                backgroundColor: dc.curPeriod,
+                hoverBackgroundColor: dc.curPeriodHover,
                 borderWidth: 0,
                 borderRadius: 6,
                 borderSkipped: false,
@@ -1129,8 +1355,8 @@
               {
                 label: prevLabel,
                 data: [prevW.en, prevW.tech, prevW.book, prevW.inv],
-                backgroundColor: "#cbd5e1",
-                hoverBackgroundColor: "#94a3b8",
+                backgroundColor: dc.prevPeriod,
+                hoverBackgroundColor: dc.prevPeriodHover,
                 borderWidth: 0,
                 borderRadius: 6,
                 borderSkipped: false,
@@ -1141,7 +1367,7 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 8 } },
+            layout: { padding: { top: 22 } },
             categoryPercentage: 0.62,
             barPercentage: 0.9,
             interaction: { mode: "index", intersect: false },
@@ -1149,19 +1375,20 @@
               x: {
                 grid: { display: false },
                 border: { display: false },
-                ticks: { font: { size: 12, weight: "500" }, color: "#475569" },
+                ticks: { font: { size: 12, weight: "500" }, color: "#94a3b8" },
               },
               y: {
                 beginAtZero: true,
                 border: { display: false },
-                grid: { color: "rgba(148,163,184,0.18)" },
+                grid: { color: dc.grid },
+                title: { display: true, text: "Saat", font: { size: 11 }, color: "#94a3b8" },
                 ticks: {
                   color: "#94a3b8",
                   font: { size: 11 },
                   padding: 6,
                   maxTicksLimit: 5,
                   callback: function (val) {
-                    return String(val);
+                    return formatHoursAxisTick(val);
                   },
                 },
               },
@@ -1177,7 +1404,24 @@
                   boxHeight: 8,
                   padding: 14,
                   font: { size: 12 },
-                  color: "#334155",
+                  color: "#94a3b8",
+                  generateLabels: function (chart) {
+                    var ds = chart.data.datasets;
+                    return ds.map(function (d, i) {
+                      var bg = d.backgroundColor;
+                      var color = typeof bg === "string" ? bg : Array.isArray(bg) ? bg[0] : "#94a3b8";
+                      return {
+                        text: d.label || "",
+                        fillStyle: color,
+                        strokeStyle: color,
+                        lineWidth: 0,
+                        hidden: !chart.isDatasetVisible(i),
+                        index: i,
+                        datasetIndex: i,
+                        pointStyle: "circle",
+                      };
+                    });
+                  },
                 },
               },
               tooltip: {
@@ -1192,8 +1436,8 @@
                     var v = ctx.raw != null ? ctx.raw : 0;
                     var lb = ctx.dataset.label || "";
                     var cat = ctx.label || "";
-                    var unit = cat === "Yatırım" ? " işlem" : " dk";
-                    return "  " + lb + ": " + v + unit;
+                    if (cat === "Yatırım") return "  " + lb + ": " + v + " işlem";
+                    return "  " + lb + ": " + formatMinutesAsHours(v);
                   },
                   footer: function (items) {
                     if (!items || !items.length) return "";
@@ -1207,10 +1451,10 @@
                       return (diff > 0 ? "▲ +" : "▼ ") + diff + " işlem";
                     }
                     if (prev === 0 && cur === 0) return "Kayıt yok";
-                    if (prev === 0) return "▲ Yeni (+" + cur + " dk)";
+                    if (prev === 0) return "▲ Yeni (+" + formatMinutesAsHours(cur) + ")";
                     var pct = Math.round((diff / prev) * 100);
                     if (diff === 0) return mode === "month" ? "Geçen ayla aynı" : "Geçen haftayla aynı";
-                    return (diff > 0 ? "▲ +" : "▼ ") + diff + " dk (" + (pct > 0 ? "+" : "") + pct + "%)";
+                    return (diff > 0 ? "▲ +" : "▼ ") + formatMinutesAsHours(Math.abs(diff)) + " (" + (pct > 0 ? "+" : "") + pct + "%)";
                   },
                 },
               },
@@ -1505,6 +1749,132 @@
     return String(r).replace(".", ",");
   }
 
+  /** Dakikayı grafik/tooltip için okunabilir saat metnine çevirir. */
+  function formatMinutesAsHours(m) {
+    var n = Number(m);
+    if (isNaN(n) || n <= 0) return "0 dk";
+    if (n < 60) return formatMinutesForDisplay(n) + " dk";
+    var h = Math.floor(n / 60);
+    var rem = Math.round(n % 60);
+    if (rem === 0) return h + " sa";
+    return h + " sa " + rem + " dk";
+  }
+
+  /** Y ekseni tikleri — veri dakika, gösterim saat. */
+  function formatHoursAxisTick(minutes) {
+    var n = Number(minutes);
+    if (isNaN(n) || n === 0) return "0";
+    if (n < 60) return formatMinutesForDisplay(n) + " dk";
+    var h = n / 60;
+    if (Math.abs(h - Math.round(h)) < 0.08) return Math.round(h) + " sa";
+    return (Math.round(h * 10) / 10).toString().replace(".", ",") + " sa";
+  }
+
+  /** Halka grafik dilimlerinde saat / işlem etiketi. */
+  function dashDoughnutHoursPlugin() {
+    return {
+      id: "dashDoughnutHours",
+      afterDatasetsDraw: function (chart) {
+        var ctx = chart.ctx;
+        var meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data) return;
+        var arr = (chart.data.datasets[0] && chart.data.datasets[0].data) || [];
+        var lbls = chart.data.labels || [];
+        ctx.save();
+        ctx.font = "600 10px 'DM Sans', system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "rgba(15, 23, 42, 0.22)";
+        ctx.shadowBlur = 2;
+        meta.data.forEach(function (arc, idx) {
+          var val = arr[idx] || 0;
+          if (val <= 0) return;
+          var lb = lbls[idx] || "";
+          var text = lb === "Yatırım" ? val + " işl." : formatMinutesAsHours(val);
+          var pos = arc.tooltipPosition();
+          ctx.fillStyle = lb === "Kitap" ? "rgba(15, 23, 42, 0.78)" : "rgba(255, 255, 255, 0.95)";
+          ctx.fillText(text, pos.x, pos.y);
+        });
+        ctx.restore();
+      },
+    };
+  }
+
+  /** Yığılmış çubuk grafiklerde her sütunun üstünde toplam saat. */
+  function dashStackedTotalLabelsPlugin() {
+    return {
+      id: "dashStackedTotalLabels",
+      afterDatasetsDraw: function (chart) {
+        var ctx = chart.ctx;
+        var datasets = chart.data.datasets;
+        var lblCount = (chart.data.labels && chart.data.labels.length) || 0;
+        if (!datasets || !lblCount) return;
+        ctx.save();
+        ctx.font = "600 10px 'DM Sans', system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillStyle = chartTheme().text;
+        var xi;
+        for (xi = 0; xi < lblCount; xi++) {
+          var sumMin = 0;
+          var invCount = 0;
+          var topY = null;
+          var centerX = null;
+          var di;
+          for (di = 0; di < datasets.length; di++) {
+            var meta = chart.getDatasetMeta(di);
+            if (meta.hidden) continue;
+            var val = datasets[di].data[xi] || 0;
+            var dsLabel = datasets[di].label || "";
+            if (dsLabel === "Yatırım") invCount += val;
+            else sumMin += val;
+            if (val > 0 && meta.data[xi]) {
+              var props = meta.data[xi].getProps(["x", "y"], true);
+              centerX = props.x;
+              if (topY === null || props.y < topY) topY = props.y;
+            }
+          }
+          if (topY === null || (sumMin <= 0 && invCount <= 0)) continue;
+          var txt = sumMin > 0 ? formatMinutesAsHours(sumMin) : "";
+          if (invCount > 0) txt += (txt ? " · " : "") + invCount + " işl.";
+          ctx.fillText(txt, centerX, topY - 5);
+        }
+        ctx.restore();
+      },
+    };
+  }
+
+  /** Gruplu çubuk grafiklerde her çubuğun üstünde saat. */
+  function dashGroupedBarLabelsPlugin() {
+    return {
+      id: "dashGroupedBarLabels",
+      afterDatasetsDraw: function (chart) {
+        var ctx = chart.ctx;
+        var datasets = chart.data.datasets;
+        var catLabels = chart.data.labels || [];
+        if (!datasets) return;
+        ctx.save();
+        ctx.font = "600 10px 'DM Sans', system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillStyle = chartTheme().text;
+        datasets.forEach(function (ds, di) {
+          var meta = chart.getDatasetMeta(di);
+          if (meta.hidden) return;
+          meta.data.forEach(function (bar, xi) {
+            var val = ds.data[xi];
+            if (!val || val <= 0) return;
+            var cat = catLabels[xi] || "";
+            var text = cat === "Yatırım" ? val + " işl." : formatMinutesAsHours(val);
+            var props = bar.getProps(["x", "y"], true);
+            ctx.fillText(text, props.x, props.y - 4);
+          });
+        });
+        ctx.restore();
+      },
+    };
+  }
+
   var enSubtypeLabels = {
     calisma: "Çalışma",
     grammar: "Grammar",
@@ -1670,7 +2040,7 @@
   var ydsTrendChart = null;
   var ydsDenemeChart = null;
   var ydsSubtypeChart = null;
-  var ydsCumulativeChart = null;
+  var ydsProgressChart = null;
   var teknikTrendChart = null;
   var teknikWeekdayChart = null;
   var teknikTopicChart = null;
@@ -3382,7 +3752,7 @@
             fullLabels: dist.fullLabels,
             backgroundColor: "rgba(138, 122, 214, 0.55)",
             hoverBackgroundColor: "rgba(138, 122, 214, 0.78)",
-            borderColor: "#8a7ad6",
+            borderColor: "#9aa0f5",
             borderWidth: 1,
             borderRadius: 6,
             maxBarThickness: period === "month" ? 18 : 38,
@@ -3435,6 +3805,48 @@
     var wk = document.getElementById("teknik-stat-week");
     if (wk) wk.textContent = formatMinutesForDisplay(weekStats.minutes);
 
+    var wkSessionsEl = document.getElementById("teknik-stat-sessions");
+    if (wkSessionsEl) wkSessionsEl.textContent = String(weekStats.sessions);
+
+    var wkAvgEl = document.getElementById("teknik-stat-avg");
+    var avgMin = weekStats.sessions > 0 ? Math.round(weekStats.minutes / weekStats.sessions) : 0;
+    if (wkAvgEl) wkAvgEl.textContent = String(avgMin);
+
+    var lastWeekAnchor = new Date();
+    lastWeekAnchor.setDate(lastWeekAnchor.getDate() - 7);
+    var lastWeekMin = 0;
+    state.sessions.forEach(function (s) {
+      if (String(s.category || "").trim() !== "technical") return;
+      var iso = sessionEffectiveTime(s);
+      if (!iso || !isIsoInWeekStarting(iso, lastWeekAnchor)) return;
+      lastWeekMin += s.durationMinutes || 0;
+    });
+    var trendEl = document.getElementById("teknik-stat-trend");
+    var trendHintEl = document.getElementById("teknik-stat-trend-hint");
+    if (trendEl) {
+      trendEl.classList.remove("teknik-hero-stat__val--up", "teknik-hero-stat__val--down");
+      var trendTxt = "—";
+      if (lastWeekMin <= 0) {
+        if (weekStats.minutes > 0) {
+          trendTxt = "▲ Yeni";
+          trendEl.classList.add("teknik-hero-stat__val--up");
+        }
+      } else {
+        var pct = Math.round(((weekStats.minutes - lastWeekMin) / lastWeekMin) * 100);
+        if (pct > 0) {
+          trendTxt = "▲ +" + pct + "%";
+          trendEl.classList.add("teknik-hero-stat__val--up");
+        } else if (pct < 0) {
+          trendTxt = "▼ " + pct + "%";
+          trendEl.classList.add("teknik-hero-stat__val--down");
+        } else {
+          trendTxt = "± %0";
+        }
+      }
+      trendEl.textContent = trendTxt;
+    }
+    if (trendHintEl) trendHintEl.textContent = "Geçen hafta: " + formatMinutesForDisplay(lastWeekMin) + " dk";
+
     renderTeknikWeekdayChart(teknikWeekdayPeriod);
 
     var series30 = technicalDailySeries(30);
@@ -3456,21 +3868,58 @@
       } else {
         if (emptyTrend) emptyTrend.hidden = true;
         if (wrapTrend) wrapTrend.hidden = false;
+
+        var trendWin = 7;
+        var trendAvg = [];
+        var activeDays30 = 0;
+        var ti2;
+        for (ti2 = 0; ti2 < series30.minutes.length; ti2++) {
+          if (series30.minutes[ti2] > 0) activeDays30++;
+          var accS = 0;
+          var accC = 0;
+          var tj;
+          for (tj = Math.max(0, ti2 - trendWin + 1); tj <= ti2; tj++) {
+            accS += series30.minutes[tj];
+            accC++;
+          }
+          trendAvg.push(accC ? Math.round((accS / accC) * 10) / 10 : 0);
+        }
+        var trendSubEl = document.getElementById("teknik-trend-sub");
+        if (trendSubEl) {
+          var dailyAvg30 = Math.round((sum30 / series30.minutes.length) * 10) / 10;
+          trendSubEl.textContent =
+            "Toplam " + formatMinutesForDisplay(sum30) + " dk · " + activeDays30 + " aktif gün · günlük ort. " + dailyAvg30 + " dk";
+        }
+
         teknikTrendChart = new Chart(canvasTrend, {
           type: "line",
           data: {
             labels: series30.labels,
             datasets: [
               {
-                label: "Teknik (dk)",
+                label: "Günlük süre",
                 data: series30.minutes,
-                borderColor: "#8a7ad6",
+                borderColor: "#9aa0f5",
                 backgroundColor: "rgba(138, 122, 214, 0.12)",
                 fill: true,
                 tension: 0.25,
                 borderWidth: 2,
                 pointRadius: 2,
                 pointHoverRadius: 5,
+                order: 2,
+              },
+              {
+                label: "7 günlük ortalama",
+                data: trendAvg,
+                borderColor: "#f0a868",
+                backgroundColor: "transparent",
+                borderDash: [5, 4],
+                fill: false,
+                tension: 0.3,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                order: 1,
               },
             ],
           },
@@ -3491,13 +3940,15 @@
               },
             },
             plugins: {
-              legend: { display: false },
+              legend: { display: true, position: "bottom", labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
               tooltip: {
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
-                    var dayIdx = ctx.dataIndex;
-                    var cnt = series30.counts[dayIdx] || 0;
+                    if (ctx.datasetIndex === 1) {
+                      return "7 günlük ort.: " + v + " dk";
+                    }
+                    var cnt = series30.counts[ctx.dataIndex] || 0;
                     return ["Süre: " + v + " dk", "Oturum: " + cnt];
                   },
                 },
@@ -3536,7 +3987,12 @@
       } else {
         if (emptyTopic) emptyTopic.hidden = true;
         if (wrapTopic) wrapTopic.hidden = false;
-        var colors = ["#8a7ad6", "#a99ce0", "#c4bbeb", "#9a8bdb", "#7866c9", "#6d5cbf", "#b0a3e6", "#8577cf"];
+        var topicSubEl = document.getElementById("teknik-topic-sub");
+        if (topicSubEl) {
+          topicSubEl.textContent =
+            topicKeys.length + " konu · toplam " + formatMinutesForDisplay(topicSum) + " dk";
+        }
+        var colors = ["#9aa0f5", "#a99ce0", "#c4bbeb", "#9a8bdb", "#7866c9", "#6d5cbf", "#b0a3e6", "#8577cf"];
         topicKeys.sort(function (a, b) {
           return topicAgg[b] - topicAgg[a];
         });
@@ -3569,7 +4025,8 @@
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.raw != null ? ctx.raw : 0;
-                    return (ctx.label || "") + ": " + v + " dk";
+                    var pct = topicSum > 0 ? Math.round((v / topicSum) * 100) : 0;
+                    return (ctx.label || "") + ": " + v + " dk (%" + pct + ")";
                   },
                 },
               },
@@ -3706,100 +4163,120 @@
       ydsSubtypeChart.destroy();
       ydsSubtypeChart = null;
     }
-    if (ydsCumulativeChart) {
-      ydsCumulativeChart.destroy();
-      ydsCumulativeChart = null;
+    if (ydsProgressChart) {
+      ydsProgressChart.destroy();
+      ydsProgressChart = null;
     }
   }
 
-  function renderYdsSubtypeDistributionAndCumulativeCharts() {
+  function renderYdsChartKpis(agg) {
+    var el = document.getElementById("yds-chart-kpis");
+    if (!el) return;
+    var min14 = 0;
+    var q14 = 0;
+    var di;
+    for (di = 13; di >= 0; di--) {
+      var dt = new Date();
+      dt.setHours(0, 0, 0, 0);
+      dt.setDate(dt.getDate() - di);
+      var dk = dateKeyLocal(dt);
+      min14 += agg.min[dk] || 0;
+      q14 += agg.q[dk] || 0;
+    }
+    state.yds = mergeYds(state.yds);
+    var prog = cumulativeEnglishProgressByDay(programStartDateKey(state.yds));
+    var denemeList = denemeSessionsFromState();
+    var plotable = denemeList.filter(function (r) {
+      return r.dogru + r.yanlis + r.bos > 0;
+    });
+    var lastNet = "—";
+    if (plotable.length) {
+      var ln = plotable[plotable.length - 1].net;
+      lastNet = ln != null ? ln.toFixed(1) : "—";
+    }
+    el.innerHTML =
+      '<div class="yds-chart-kpi"><span class="yds-chart-kpi__label">Son 14 gün · dk</span><strong class="yds-chart-kpi__val">' +
+      formatMinutesForDisplay(min14) +
+      "</strong></div>" +
+      '<div class="yds-chart-kpi"><span class="yds-chart-kpi__label">Son 14 gün · soru</span><strong class="yds-chart-kpi__val">' +
+      q14 +
+      "</strong></div>" +
+      '<div class="yds-chart-kpi"><span class="yds-chart-kpi__label">Program · toplam soru</span><strong class="yds-chart-kpi__val">' +
+      prog.totalQ +
+      "</strong></div>" +
+      '<div class="yds-chart-kpi"><span class="yds-chart-kpi__label">Deneme · son net</span><strong class="yds-chart-kpi__val">' +
+      lastNet +
+      "</strong></div>";
+  }
+
+  function renderYdsSubtypeAndProgressCharts(period) {
     var cSub = document.getElementById("yds-chart-subtype");
-    var cCum = document.getElementById("yds-chart-cumulative");
-    if (!cSub && !cCum) return;
+    var cProg = document.getElementById("yds-chart-progress");
+    if (!cSub && !cProg) return;
     if (typeof Chart === "undefined") return;
     state = loadState();
     state.yds = mergeYds(state.yds);
     destroyYdsSubtypeCumulativeCharts();
 
-    var cutoff = new Date();
-    cutoff.setHours(0, 0, 0, 0);
-    cutoff.setDate(cutoff.getDate() - 28);
-    var rawAgg = englishSubtypeMinutesSince(cutoff);
-    if (rawAgg.deneme != null) delete rawAgg.deneme;
+    var subPeriod = period || sessionStorage.getItem("ydsSubtypePeriod") || "28";
+    var subMap = { "7": "Son 7 gün · süreye göre", "28": "Son 28 gün · süreye göre", all: "Tüm zamanlar · süreye göre" };
+    var subSubEl = document.getElementById("yds-subtype-sub");
+    if (subSubEl) subSubEl.textContent = subMap[subPeriod] || subMap["28"];
 
-    var order = ["calisma", "grammar", "cloze", "tr_eng", "eng_tr", "passage", "listening", "paragraf", "kelime"];
-    var colors = {
-      calisma: "#2f9c8f",
-      grammar: "#14b8a6",
-      cloze: "#8a7ad6",
-      tr_eng: "#a855f7",
-      eng_tr: "#6366f1",
-      passage: "#dca15a",
-      listening: "#0891b2",
-      paragraf: "#ea580c",
-      kelime: "#059669",
-    };
-    var labels = [];
-    var data = [];
-    var bg = [];
-    var oi;
-    for (oi = 0; oi < order.length; oi++) {
-      var key = order[oi];
-      var m = rawAgg[key] || 0;
-      if (m <= 0) continue;
-      labels.push(enSubtypeLabels[key] || key);
-      data.push(m);
-      bg.push(colors[key] || "#64748b");
-    }
-    Object.keys(rawAgg).forEach(function (key) {
-      if (key === "deneme") return;
-      if (order.indexOf(key) >= 0) return;
-      var m2 = rawAgg[key] || 0;
-      if (m2 <= 0) return;
-      labels.push(enSubtypeLabels[key] || key);
-      data.push(m2);
-      bg.push(colors[key] || "#64748b");
-    });
+    var series = buildYdsSubtypeSeries(subPeriod);
 
     if (cSub) {
       var emptyS = document.getElementById("yds-subtype-empty");
       var wrapS = document.getElementById("yds-subtype-canvas-wrap");
-      if (labels.length === 0) {
+      if (series.labels.length === 0) {
         if (emptyS) {
-          emptyS.textContent = "Son 28 günde (deneme hariç) süre yok.";
+          emptyS.textContent = subPeriod === "all" ? "Henüz süre kaydı yok." : "Seçilen dönemde süre kaydı yok.";
           emptyS.hidden = false;
         }
         if (wrapS) wrapS.hidden = true;
       } else {
         if (emptyS) emptyS.hidden = true;
         if (wrapS) wrapS.hidden = false;
-        cSub.setAttribute("aria-label", "YDS alt tür süre dağılımı (son 28 gün)");
+        var subTotal = 0;
+        var si;
+        for (si = 0; si < series.data.length; si++) subTotal += series.data[si];
+        cSub.setAttribute("aria-label", "YDS alt tür süre dağılımı");
         ydsSubtypeChart = new Chart(cSub, {
-          type: "doughnut",
+          type: "bar",
           data: {
-            labels: labels,
+            labels: series.labels,
             datasets: [
               {
-                data: data,
-                backgroundColor: bg,
+                label: "Süre (dk)",
+                data: series.data,
+                backgroundColor: series.bg,
                 borderWidth: 0,
+                borderRadius: 4,
+                maxBarThickness: 22,
               },
             ],
           },
           options: {
+            indexAxis: "y",
             responsive: true,
             maintainAspectRatio: false,
-            cutout: "52%",
-            plugins: {
-              legend: {
-                position: "bottom",
-                labels: { boxWidth: 12, padding: 8, font: { size: 11 } },
+            layout: { padding: { right: 8 } },
+            scales: {
+              x: {
+                beginAtZero: true,
+                grid: { color: chartTheme().grid },
+                ticks: { callback: function (v) { return v + " dk"; } },
               },
+              y: { grid: { display: false } },
+            },
+            plugins: {
+              legend: { display: false },
               tooltip: {
                 callbacks: {
                   label: function (ctx) {
-                    var v = ctx.raw != null ? ctx.raw : 0;
-                    return (ctx.label || "") + ": " + v + " dk";
+                    var v = ctx.parsed.x != null ? ctx.parsed.x : 0;
+                    var pct = subTotal > 0 ? Math.round((v / subTotal) * 100) : 0;
+                    return (ctx.label || "") + ": " + v + " dk (%" + pct + ")";
                   },
                 },
               },
@@ -3809,36 +4286,54 @@
       }
     }
 
-    if (cCum) {
+    if (cProg) {
       var psK = programStartDateKey(state.yds);
-      var cum = cumulativeEnglishMinutesByDay(psK);
-      var emptyC = document.getElementById("yds-cumulative-empty");
-      var wrapC = document.getElementById("yds-cumulative-canvas-wrap");
-      if (!cum.labels.length) {
-        if (emptyC) {
-          emptyC.textContent = "Kümülatif çizgi için YDS süre kaydı yok.";
-          emptyC.hidden = false;
+      var prog = cumulativeEnglishProgressByDay(psK);
+      var emptyP = document.getElementById("yds-progress-empty");
+      var wrapP = document.getElementById("yds-progress-canvas-wrap");
+      var progSubEl = document.getElementById("yds-progress-sub");
+      if (progSubEl) {
+        progSubEl.textContent =
+          "Toplam " + formatMinutesForDisplay(prog.totalMin) + " dk · " + prog.totalQ + " soru (program başlangıcından itibaren)";
+      }
+      if (!prog.labels.length || (prog.totalMin <= 0 && prog.totalQ <= 0)) {
+        if (emptyP) {
+          emptyP.textContent = "Program ilerlemesi için YDS kaydı yok.";
+          emptyP.hidden = false;
         }
-        if (wrapC) wrapC.hidden = true;
+        if (wrapP) wrapP.hidden = true;
       } else {
-        if (emptyC) emptyC.hidden = true;
-        if (wrapC) wrapC.hidden = false;
-        cCum.setAttribute("aria-label", "Kümülatif YDS çalışma süresi");
-        ydsCumulativeChart = new Chart(cCum, {
+        if (emptyP) emptyP.hidden = true;
+        if (wrapP) wrapP.hidden = false;
+        cProg.setAttribute("aria-label", "Kümülatif YDS süre ve soru");
+        ydsProgressChart = new Chart(cProg, {
           type: "line",
           data: {
-            labels: cum.labels,
+            labels: prog.labels,
             datasets: [
               {
-                label: "Toplam YDS (dk)",
-                data: cum.data,
-                borderColor: "#277f74",
-                backgroundColor: "rgba(39, 127, 116, 0.1)",
+                label: "Süre (dk)",
+                data: prog.dataMin,
+                borderColor: "#60a5fa",
+                backgroundColor: "rgba(96, 165, 250, 0.1)",
                 fill: true,
                 tension: 0.2,
                 borderWidth: 2,
                 pointRadius: 0,
                 pointHoverRadius: 4,
+                yAxisID: "y",
+              },
+              {
+                label: "Soru",
+                data: prog.dataQ,
+                borderColor: "#a78bfa",
+                backgroundColor: "transparent",
+                fill: false,
+                tension: 0.2,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                yAxisID: "y1",
               },
             ],
           },
@@ -3852,18 +4347,27 @@
                 ticks: { maxRotation: 45, minRotation: 0, autoSkip: true },
               },
               y: {
+                position: "left",
                 beginAtZero: true,
                 title: { display: true, text: "Dakika (kümülatif)" },
                 ticks: { callback: function (v) { return v + " dk"; } },
               },
+              y1: {
+                position: "right",
+                beginAtZero: true,
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: "Soru (kümülatif)" },
+                ticks: { precision: 0, callback: function (v) { return v + " soru"; } },
+              },
             },
             plugins: {
-              legend: { display: false },
+              legend: { position: "bottom", labels: { boxWidth: 12, padding: 10, font: { size: 11 } } },
               tooltip: {
                 callbacks: {
                   label: function (ctx) {
                     var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
-                    return "Toplam: " + v + " dk";
+                    if (ctx.datasetIndex === 1) return "Soru: " + v;
+                    return "Süre: " + v + " dk";
                   },
                 },
               },
@@ -3947,11 +4451,30 @@
     var labels = [];
     var nets = [];
     var i;
+    var netSum = 0;
+    var bestNet = -Infinity;
     for (i = 0; i < plotable.length; i++) {
       var row = plotable[i];
       var dt = new Date(row.iso);
       labels.push(dt.getDate() + " " + MONTH_SHORT_TR[dt.getMonth()]);
-      nets.push(row.net != null ? row.net : row.dogru - row.yanlis / 4);
+      var nVal = row.net != null ? row.net : row.dogru - row.yanlis / 4;
+      nets.push(nVal);
+      netSum += nVal;
+      if (nVal > bestNet) bestNet = nVal;
+    }
+    var avgNet = plotable.length ? Math.round((netSum / plotable.length) * 10) / 10 : 0;
+    var lastNetVal = nets[nets.length - 1];
+
+    var denemeSubEl = document.getElementById("yds-deneme-sub");
+    if (denemeSubEl) {
+      denemeSubEl.textContent =
+        plotable.length +
+        " deneme · son net " +
+        lastNetVal.toFixed(1) +
+        " · ort. " +
+        avgNet.toFixed(1) +
+        " · en iyi " +
+        bestNet.toFixed(1);
     }
 
     canvas.setAttribute("aria-label", "Deneme netleri (kronolojik)");
@@ -3964,16 +4487,28 @@
           {
             label: "Net (D − Y/4)",
             data: nets,
-            borderColor: "#2f9c8f",
-            backgroundColor: "rgba(47, 156, 143, 0.12)",
+            borderColor: "#60a5fa",
+            backgroundColor: "rgba(96, 165, 250, 0.12)",
             fill: true,
             tension: 0.3,
             pointRadius: 4,
             pointHoverRadius: 6,
-            pointBackgroundColor: "#277f74",
-            pointBorderColor: "#fff",
+            pointBackgroundColor: "#60a5fa",
+            pointBorderColor: chartTheme().surface,
             pointBorderWidth: 2,
             borderWidth: 2,
+            order: 1,
+          },
+          {
+            label: "Ortalama (" + avgNet.toFixed(1) + ")",
+            data: nets.map(function () { return avgNet; }),
+            borderColor: "#94a3b8",
+            backgroundColor: "transparent",
+            borderDash: [5, 4],
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: false,
+            order: 2,
           },
         ],
       },
@@ -4198,13 +4733,15 @@
       calRoot.innerHTML = renderYdsCalendarMonthHtml(ydsCalView.y, ydsCalView.m, ydsAgg);
     }
 
+    renderYdsChartKpis(ydsAgg);
+
     var canvas = document.getElementById("yds-chart-trend");
     var emptyEl = document.getElementById("yds-chart-empty");
     var wrap = document.getElementById("yds-chart-canvas-wrap");
     destroyYdsTrendChart();
     destroyYdsSubtypeCumulativeCharts();
     if (!canvas || typeof Chart === "undefined") {
-      renderYdsSubtypeDistributionAndCumulativeCharts();
+      renderYdsSubtypeAndProgressCharts();
       return;
     }
 
@@ -4217,17 +4754,21 @@
     var useMonthly = chartStartOk && ydsChartShouldUseMonthly(chartStartRaw);
     var labels = [];
     var dataMin = [];
+    var dataQ = [];
     var sumTotal = 0;
+    var sumQ = 0;
     var t;
     var ii;
 
     if (useMonthly) {
-      var todayKey = dateKeyLocal(new Date());
-      var ms = ydsChartMonthlySeries(agg, chartStartRaw, todayKey);
+      var todayKeyM = dateKeyLocal(new Date());
+      var ms = ydsChartMonthlySeries(agg, chartStartRaw, todayKeyM);
       labels = ms.labels;
       dataMin = ms.dataMin;
+      dataQ = ms.dataQ;
       for (ii = 0; ii < labels.length; ii++) {
         sumTotal += dataMin[ii];
+        sumQ += dataQ[ii];
       }
     } else {
       for (t = 13; t >= 0; t--) {
@@ -4238,13 +4779,26 @@
         if (chartStartOk && dk < chartStartRaw) continue;
         labels.push(dt.getDate() + " " + MONTH_SHORT_TR[dt.getMonth()]);
         var m0 = agg.min[dk] || 0;
+        var q0 = agg.q[dk] || 0;
         dataMin.push(m0);
+        dataQ.push(q0);
         sumTotal += m0;
+        sumQ += q0;
       }
     }
 
-    if (sumTotal <= 0) {
-      if (emptyEl) emptyEl.hidden = false;
+    var actSubEl = document.getElementById("yds-activity-sub");
+    if (actSubEl) {
+      actSubEl.textContent = useMonthly
+        ? "Aylık · toplam " + formatMinutesForDisplay(sumTotal) + " dk · " + sumQ + " soru"
+        : "Son 14 gün · toplam " + formatMinutesForDisplay(sumTotal) + " dk · " + sumQ + " soru";
+    }
+
+    if (sumTotal <= 0 && sumQ <= 0) {
+      if (emptyEl) {
+        emptyEl.textContent = useMonthly ? "Seçilen aralıkta kayıt yok." : "Son 14 günde kayıt yok.";
+        emptyEl.hidden = false;
+      }
       if (wrap) wrap.hidden = true;
     } else {
       if (emptyEl) emptyEl.hidden = true;
@@ -4253,7 +4807,7 @@
       if (canvas) {
         canvas.setAttribute(
           "aria-label",
-          useMonthly ? "Aylık YDS çalışma süresi (dakika)" : "Son on dört gün YDS çalışma süresi (dakika)"
+          useMonthly ? "Aylık YDS aktivitesi (dakika ve soru)" : "Son 14 gün YDS aktivitesi (dakika ve soru)"
         );
       }
 
@@ -4263,20 +4817,34 @@
       }
 
       ydsTrendChart = new Chart(canvas, {
-        type: "line",
+        type: "bar",
         data: {
           labels: labels,
           datasets: [
             {
-              label: "Çalışma süresi",
+              type: "bar",
+              label: "Süre (dk)",
               data: dataMin,
-              borderColor: "#2f9c8f",
-              backgroundColor: "rgba(47, 156, 143, 0.12)",
+              backgroundColor: "rgba(96, 165, 250, 0.55)",
+              hoverBackgroundColor: "rgba(96, 165, 250, 0.78)",
+              borderWidth: 0,
+              borderRadius: 4,
+              maxBarThickness: useMonthly ? 28 : 22,
+              yAxisID: "y",
+              order: 2,
+            },
+            {
+              type: "line",
+              label: "Soru",
+              data: dataQ,
+              borderColor: "#a78bfa",
+              backgroundColor: "transparent",
               borderWidth: 2,
-              fill: true,
               tension: 0.25,
               pointRadius: 3,
               pointHoverRadius: 5,
+              yAxisID: "y1",
+              order: 1,
             },
           ],
         },
@@ -4287,18 +4855,27 @@
           scales: {
             x: xScaleOpts,
             y: {
+              position: "left",
               beginAtZero: true,
-              title: { display: true, text: "Süre (dakika)" },
+              title: { display: true, text: "Dakika" },
               ticks: { callback: function (v) { return v + " dk"; } },
+            },
+            y1: {
+              position: "right",
+              beginAtZero: true,
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: "Soru" },
+              ticks: { precision: 0 },
             },
           },
           plugins: {
-            legend: { display: false },
+            legend: { position: "bottom", labels: { boxWidth: 12, padding: 10, font: { size: 11 } } },
             tooltip: {
               callbacks: {
                 label: function (ctx) {
                   var v = ctx.parsed.y != null ? ctx.parsed.y : 0;
-                  return "Çalışma: " + v + " dk";
+                  if (ctx.datasetIndex === 1) return "Soru: " + v;
+                  return "Süre: " + v + " dk";
                 },
               },
             },
@@ -4307,7 +4884,7 @@
       });
     }
 
-    renderYdsSubtypeDistributionAndCumulativeCharts();
+    renderYdsSubtypeAndProgressCharts();
   }
 
   function rollupEnglishSessionsWeek(state) {
@@ -4538,12 +5115,6 @@
     if (programStartIn) programStartIn.value = yds.programStartDate || "";
 
     var csRawChart = (yds.chartStartDate && String(yds.chartStartDate).trim()) || "";
-    var chartMonthly = ydsChartShouldUseMonthly(csRawChart);
-
-    var chartTitleEl = document.getElementById("yds-chart-title");
-    if (chartTitleEl) {
-      chartTitleEl.textContent = chartMonthly ? "Çalışma süresi (aylık)" : "Çalışma süresi (son 14 gün)";
-    }
 
     var basvuruBanner = document.getElementById("yds-basvuru-alert");
     renderYdsBasvuruAlert(basvuruBanner, yds.applicationDate);
@@ -4666,6 +5237,32 @@
             if (inp.showPicker) try { inp.showPicker(); } catch (e) {}
           }, 0);
         }
+      });
+    }
+
+    var subtypePeriodTabs = document.getElementById("yds-subtype-period");
+    if (subtypePeriodTabs && !subtypePeriodTabs.dataset.bound) {
+      subtypePeriodTabs.dataset.bound = "1";
+      var savedPeriod = sessionStorage.getItem("ydsSubtypePeriod");
+      if (savedPeriod === "7" || savedPeriod === "28" || savedPeriod === "all") {
+        subtypePeriodTabs.querySelectorAll(".seg-toggle__btn").forEach(function (b) {
+          var on = b.getAttribute("data-period") === savedPeriod;
+          b.classList.toggle("seg-toggle__btn--active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+      }
+      subtypePeriodTabs.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-period]");
+        if (!btn || !subtypePeriodTabs.contains(btn)) return;
+        var period = btn.getAttribute("data-period") || "28";
+        sessionStorage.setItem("ydsSubtypePeriod", period);
+        subtypePeriodTabs.querySelectorAll(".seg-toggle__btn").forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle("seg-toggle__btn--active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        state = loadState();
+        renderYdsSubtypeAndProgressCharts(period);
       });
     }
 
@@ -5051,8 +5648,8 @@
           {
             label: "Çalışma",
             data: hours,
-            backgroundColor: "#2f9c8f",
-            hoverBackgroundColor: "#277f74",
+            backgroundColor: "#5cc4b7",
+            hoverBackgroundColor: "#43b3a5",
             borderWidth: 0,
             borderRadius: 6,
             borderSkipped: false,
@@ -5069,7 +5666,7 @@
           x: {
             grid: { display: false },
             border: { display: false },
-            ticks: { font: { size: 11 }, color: "#475569" },
+            ticks: { font: { size: 11 }, color: "#94a3b8" },
           },
           y: {
             beginAtZero: true,
@@ -5292,29 +5889,32 @@
     renderCalendarCharts();
   }
 
+  applyChartDefaults();
+
   if (page === "dashboard") {
     bindExportClick();
     attachStandardImport();
-    var dashCmpSeg = document.getElementById("dash-compare-period");
-    if (dashCmpSeg && !dashCmpSeg.dataset.bound) {
-      dashCmpSeg.dataset.bound = "1";
-      var savedCmpMode = sessionStorage.getItem("dashCompareMode") === "month" ? "month" : "week";
-      dashCmpSeg.querySelectorAll(".seg-toggle__btn").forEach(function (b) {
-        var on = b.getAttribute("data-period") === savedCmpMode;
+    var dashPeriodSeg = document.getElementById("dash-charts-period");
+    if (dashPeriodSeg && !dashPeriodSeg.dataset.bound) {
+      dashPeriodSeg.dataset.bound = "1";
+      var savedPeriod = sessionStorage.getItem("dashChartsPeriod") === "month" ? "month" : "week";
+      dashPeriodSeg.querySelectorAll(".seg-toggle__btn").forEach(function (b) {
+        var on = b.getAttribute("data-period") === savedPeriod;
         b.classList.toggle("seg-toggle__btn--active", on);
         b.setAttribute("aria-selected", on ? "true" : "false");
       });
-      dashCmpSeg.addEventListener("click", function (e) {
+      dashPeriodSeg.addEventListener("click", function (e) {
         var btn = e.target.closest(".seg-toggle__btn");
         if (!btn) return;
         var mode = btn.getAttribute("data-period") === "month" ? "month" : "week";
-        sessionStorage.setItem("dashCompareMode", mode);
-        dashCmpSeg.querySelectorAll(".seg-toggle__btn").forEach(function (b) {
+        sessionStorage.setItem("dashChartsPeriod", mode);
+        dashPeriodSeg.querySelectorAll(".seg-toggle__btn").forEach(function (b) {
           var on = b === btn;
           b.classList.toggle("seg-toggle__btn--active", on);
           b.setAttribute("aria-selected", on ? "true" : "false");
         });
         renderDashboardIndexCharts();
+        renderDashboardCharts();
       });
     }
     renderStats();
@@ -5883,6 +6483,15 @@
         }
       })
       .catch(function () {});
+  }
+
+  if (typeof window !== "undefined" && window.addEventListener) {
+    window.addEventListener("themechange", function () {
+      applyChartDefaults();
+      try {
+        refreshAfterServerSync();
+      } catch (e) {}
+    });
   }
 
   initServerSync();

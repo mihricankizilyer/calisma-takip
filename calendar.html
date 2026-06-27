@@ -7,7 +7,27 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=soft1" />
+  <link rel="stylesheet" href="css/style.css?v=redesign4" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("theme");
+        if (t !== "light" && t !== "dark") {
+          t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+      document.addEventListener("click", function (e) {
+        var btn = e.target.closest && e.target.closest(".theme-toggle");
+        if (!btn) return;
+        var cur = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+        var next = cur === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        try { localStorage.setItem("theme", next); } catch (e2) {}
+        window.dispatchEvent(new CustomEvent("themechange", { detail: next }));
+      });
+    })();
+  </script>
 </head>
 <body data-page="calendar" class="page-calendar">
   <div class="shell">
@@ -19,17 +39,20 @@
         </a>
       </div>
       <nav class="sidebar__nav">
-        <a href="index.html" class="sidebar__link">Ana sayfa</a>
-        <a href="yeni-kayit.html" class="sidebar__link">Yeni kayıt</a>
-        <a href="yds.html" class="sidebar__link">YDS</a>
-        <a href="teknik.html" class="sidebar__link">Teknik</a>
-        <a href="kitaplar.html" class="sidebar__link">Kitaplar</a>
-        <a href="notlarim.html" class="sidebar__link">Notlarım</a>
-        <a href="yatirim.html" class="sidebar__link">Yatırım</a>
-        <a href="calendar.html" class="sidebar__link sidebar__link--active" aria-current="page">Takvim</a>
-        <a href="giris.html" class="sidebar__link">Giriş</a>
-        <a href="ayarlar.html" class="sidebar__link">Ayarlar</a>
-        <a href="gecmis.html" class="sidebar__link">Geçmiş kayıtlar</a>
+        <span class="sidebar__group-label">Genel</span>
+        <a href="index.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">🏠</span>Ana sayfa</a>
+        <a href="yeni-kayit.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">➕</span>Yeni kayıt</a>
+        <span class="sidebar__group-label">Çalışma</span>
+        <a href="yds.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">🎯</span>YDS</a>
+        <a href="teknik.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">💻</span>Teknik</a>
+        <a href="kitaplar.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">📚</span>Kitaplar</a>
+        <a href="notlarim.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">📝</span>Notlarım</a>
+        <a href="yatirim.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">💹</span>Yatırım</a>
+        <a href="calendar.html" class="sidebar__link sidebar__link--active" aria-current="page"><span class="sidebar__link-ico" aria-hidden="true">📅</span>Takvim</a>
+        <span class="sidebar__group-label">Hesap</span>
+        <a href="giris.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">🔑</span>Giriş</a>
+        <a href="ayarlar.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">⚙️</span>Ayarlar</a>
+        <a href="gecmis.html" class="sidebar__link"><span class="sidebar__link-ico" aria-hidden="true">🕘</span>Geçmiş kayıtlar</a>
       </nav>
     </aside>
 
@@ -41,6 +64,10 @@
           </div>
         </div>
         <div class="header__actions">
+          <button type="button" class="theme-toggle" aria-label="Tema değiştir" title="Açık/Koyu tema">
+            <span class="theme-toggle__moon" aria-hidden="true">🌙</span>
+            <span class="theme-toggle__sun" aria-hidden="true">☀️</span>
+          </button>
           <a href="yeni-kayit.html" class="btn btn--primary">Kayıt ekle</a>
           <button type="button" class="btn btn--ghost" id="btn-export-cal" title="Veriyi JSON olarak indir">Dışa aktar</button>
           <label class="btn btn--ghost btn--file">
@@ -88,6 +115,6 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
   <script src="js/sync-api.js" defer></script>
-  <script src="js/app.js" defer></script>
+  <script src="js/app.js?v=redesign4" defer></script>
 </body>
 </html>
