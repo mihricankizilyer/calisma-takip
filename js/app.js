@@ -2567,7 +2567,7 @@
     }
     if (s.abandonedBook) {
       chips +=
-        '<span class="book-timeline__chip book-timeline__chip--abandoned">Vazgeçildi</span>';
+        '<span class="book-timeline__chip book-timeline__chip--abandoned">Bırakıldı</span>';
     }
     return (
       '<li class="book-timeline__item">' +
@@ -3255,8 +3255,8 @@
         ? '<div class="book-block__abandon-row">' +
           '<button type="button" class="btn btn--ghost btn--small book-block__abandon-btn" data-book-abandon="' +
           escapeHtml(bid) +
-          '">Bu kitaptan vazgeç</button>' +
-          '<span class="book-block__abandon-hint">Bitirmedim</span>' +
+          '">Bitirmediklerime ekle</button>' +
+          '<span class="book-block__abandon-hint">Yarım bıraktım</span>' +
           "</div>"
         : "";
 
@@ -3375,7 +3375,7 @@
 
       if (abandoned.length === 0) {
         abandonedEl.innerHTML =
-          '<tr><td colspan="8" class="kitaplar-empty-cell"><p class="kitaplar-empty-msg">Henüz vazgeçtiğin bir kitap yok.</p></td></tr>';
+          '<tr><td colspan="8" class="kitaplar-empty-cell"><p class="kitaplar-empty-msg">Henüz bırakılmış kitap yok.</p></td></tr>';
       } else {
         abandonedEl.innerHTML = abandoned
           .map(function (b) {
@@ -3432,7 +3432,7 @@
     var bookIdList = Object.keys(ids);
     if (bookIdList.length === 0) {
       timelineEl.innerHTML =
-        '<p class="kitaplar-timeline-empty">Okunmakta olan kitap yok. Bitirilenler ve vazgeçtiklerin yukarıda listelenir.</p>';
+        '<p class="kitaplar-timeline-empty">Okunmakta olan kitap yok. Bitirilenler ve bitirmediklerin yukarıda listelenir.</p>';
       return;
     }
 
@@ -6304,7 +6304,7 @@
         var markFinished = !!(el.bookFinished && el.bookFinished.checked);
         var markAbandoned = !!(el.bookAbandoned && el.bookAbandoned.checked);
         if (markFinished && markAbandoned) {
-          alert("Aynı anda hem bitirdim hem vazgeçiyorum seçilemez.");
+          alert("Aynı anda hem bitirdim hem bırakıyorum seçilemez.");
           return;
         }
         session.finishedBook = markFinished;
@@ -6455,7 +6455,7 @@
           if (!abdId) return;
           if (
             !confirm(
-              "Bu kitabı Vazgeçtiklerim listesine taşımak istediğine emin misin? Okuma oturumları silinmez."
+              "Bu kitabı Bitirmediklerim listesine taşımak istediğine emin misin? Okuma oturumları silinmez."
             )
           ) {
             return;
