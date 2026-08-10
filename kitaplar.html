@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=redesign4" />
+  <link rel="stylesheet" href="css/style.css?v=redesign5" />
   <script>
     (function () {
       try {
@@ -108,6 +108,30 @@
           </div>
         </section>
 
+        <section class="panel panel--kitaplar-abandoned" aria-labelledby="abd-title">
+          <div class="panel__head-row">
+            <h2 id="abd-title" class="panel__h2">Vazgeçtiklerim</h2>
+            <p class="panel__sub">Bitirmediğim · devam etmeyeceğim</p>
+          </div>
+          <div class="table-scroll kitaplar-table-wrap">
+            <table class="data-table data-table--kitaplar data-table--kitaplar-abandoned">
+              <thead>
+                <tr>
+                  <th>Kitap</th>
+                  <th>Yazar</th>
+                  <th>Başlangıç</th>
+                  <th>Vazgeçme</th>
+                  <th>Süre</th>
+                  <th>Okunan</th>
+                  <th>Toplam syf</th>
+                  <th class="kitaplar-th--icon" scope="col"><span class="sr-only">İşlemler</span></th>
+                </tr>
+              </thead>
+              <tbody id="kitaplar-abandoned-body"></tbody>
+            </table>
+          </div>
+        </section>
+
         <section class="panel panel--kitaplar-timeline" aria-labelledby="tl-title">
           <div class="panel__head-row">
             <h2 id="tl-title" class="panel__h2">Okuma tarihçesi</h2>
@@ -120,6 +144,6 @@
     </div>
   </div>
   <script src="js/sync-api.js" defer></script>
-  <script src="js/app.js?v=redesign17" defer></script>
+  <script src="js/app.js?v=redesign18" defer></script>
 </body>
 </html>

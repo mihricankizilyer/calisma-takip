@@ -1499,6 +1499,11 @@ body {
   color: var(--accent-en);
 }
 
+.book-timeline__chip--abandoned {
+  background: rgba(148, 163, 184, 0.16);
+  color: var(--muted);
+}
+
 .book-timeline__note {
   margin: 0.55rem 0 0;
   padding-top: 0.55rem;
@@ -1792,8 +1797,52 @@ body {
   gap: 1rem;
 }
 
-.panel--kitaplar-timeline .panel__head-row {
+.panel--kitaplar-timeline .panel__head-row,
+.panel--kitaplar-abandoned .panel__head-row {
   margin-bottom: 1rem;
+}
+
+.kitaplar-td--actions {
+  white-space: nowrap;
+}
+
+.kitaplar-td--actions .btn-icon + .btn-icon {
+  margin-left: 0.35rem;
+}
+
+.btn-icon--resume {
+  color: var(--accent-en);
+}
+
+.btn-icon--resume:hover {
+  border-color: rgba(13, 148, 136, 0.42);
+  background: rgba(13, 148, 136, 0.08);
+}
+
+.book-block__abandon-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--border);
+}
+
+.book-block__abandon-btn {
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+.book-block__abandon-btn:hover {
+  color: var(--danger);
+  border-color: rgba(207, 111, 104, 0.35);
+  background: rgba(207, 111, 104, 0.06);
+}
+
+.book-block__abandon-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .kitaplar-timeline-empty {

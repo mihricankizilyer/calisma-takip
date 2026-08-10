@@ -213,6 +213,7 @@
         totalPages: null,
         startedAt: s.createdAt || null,
         finishedAt: null,
+        abandonedAt: null,
       });
       s.bookId = nid;
       changed = true;
@@ -2134,6 +2135,7 @@
       bookPagesRead: q("book-pages-read"),
       bookTotalPages: q("book-total-pages"),
       bookFinished: q("book-finished"),
+      bookAbandoned: q("book-abandoned"),
       bookDateStart: q("book-date-start"),
       bookDateEnd: q("book-date-end"),
       investAsset: q("invest-asset"),
@@ -2402,15 +2404,45 @@
       totalPages: totalPages || null,
       startedAt: new Date().toISOString(),
       finishedAt: null,
+      abandonedAt: null,
     });
     saveState(state);
     return id;
   }
 
+  function isBookFinished(b) {
+    return !!(b && b.finishedAt && !b.abandonedAt);
+  }
+
+  function isBookAbandoned(b) {
+    return !!(b && b.abandonedAt);
+  }
+
   function markBookFinished(bookId) {
     if (!bookId) return;
     state.books.forEach(function (b) {
-      if (b.id === bookId) b.finishedAt = new Date().toISOString();
+      if (b.id !== bookId) return;
+      b.finishedAt = new Date().toISOString();
+      b.abandonedAt = null;
+    });
+    saveState(state);
+  }
+
+  function markBookAbandoned(bookId, atIso) {
+    if (!bookId) return;
+    var when = atIso || new Date().toISOString();
+    state.books.forEach(function (b) {
+      if (b.id !== bookId) return;
+      b.abandonedAt = when;
+      b.finishedAt = null;
+    });
+    saveState(state);
+  }
+
+  function resumeAbandonedBook(bookId) {
+    if (!bookId) return;
+    state.books.forEach(function (b) {
+      if (b.id === bookId) b.abandonedAt = null;
     });
     saveState(state);
   }
@@ -2533,6 +2565,10 @@
       chips +=
         '<span class="book-timeline__chip book-timeline__chip--done">Kitabı bitirdi</span>';
     }
+    if (s.abandonedBook) {
+      chips +=
+        '<span class="book-timeline__chip book-timeline__chip--abandoned">Vazgeçildi</span>';
+    }
     return (
       '<li class="book-timeline__item">' +
       '<div class="book-timeline__rail" aria-hidden="true"><span class="book-timeline__dot"></span></div>' +
@@ -2641,7 +2677,10 @@
     state.books.forEach(function (b) {
       if (b.id !== bookId) return;
       if (sv) b.startedAt = dateInputToIsoLocal(sv);
-      if (ev) b.finishedAt = dateInputToIsoLocal(ev);
+      if (ev) {
+        b.finishedAt = dateInputToIsoLocal(ev);
+        b.abandonedAt = null;
+      }
     });
     saveState(state);
   }
@@ -2650,7 +2689,7 @@
     if (!bookId) return false;
     var isFinished = false;
     state.books.forEach(function (b) {
-      if (b.id === bookId && b.finishedAt) isFinished = true;
+      if (b.id === bookId && (isBookFinished(b) || isBookAbandoned(b))) isFinished = true;
     });
     if (isFinished) return false;
     var t = (title || "").trim();
@@ -2842,6 +2881,7 @@
     var cur = sel.value;
     sel.innerHTML = '<option value="new">+ Yeni kitap ekle (başlık aşağıda)</option>';
     state.books.forEach(function (b) {
+      if (isBookAbandoned(b)) return;
       var opt = document.createElement("option");
       opt.value = b.id;
       opt.textContent = b.title + (b.author ? " — " + b.author : "");
@@ -2926,6 +2966,9 @@
 
   var BOOK_ICON_PENCIL_SVG =
     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+
+  var BOOK_ICON_RESUME_SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.85"/></svg>';
 
   function renderKitaplarStats() {
     var grid = document.getElementById("kitaplar-stats-grid");
@@ -3207,6 +3250,16 @@
       subs.length,
       subs.map(renderBookTimelineSessionHtml).join("")
     );
+    var abandonAction =
+      meta && !isBookFinished(meta) && !isBookAbandoned(meta)
+        ? '<div class="book-block__abandon-row">' +
+          '<button type="button" class="btn btn--ghost btn--small book-block__abandon-btn" data-book-abandon="' +
+          escapeHtml(bid) +
+          '">Bu kitaptan vazgeç</button>' +
+          '<span class="book-block__abandon-hint">Bitirmedim, devam etmeyeceğim</span>' +
+          "</div>"
+        : "";
+
     if (meta) {
       return (
         '<div class="book-block book-block--card" data-book-id="' +
@@ -3233,6 +3286,7 @@
         '<div class="book-block__editor" hidden>' +
         metaEdit +
         datesEdit +
+        abandonAction +
         "</div>" +
         sessionsPanel +
         "</div>"
@@ -3253,6 +3307,7 @@
 
   function renderKitaplarPage() {
     var finishedEl = document.getElementById("kitaplar-finished-body");
+    var abandonedEl = document.getElementById("kitaplar-abandoned-body");
     var timelineEl = document.getElementById("kitaplar-timeline");
     if (!finishedEl || !timelineEl) return;
     state = loadState();
@@ -3261,7 +3316,7 @@
 
     var finished = state.books
       .filter(function (b) {
-        return b.finishedAt;
+        return isBookFinished(b);
       })
       .sort(function (a, b) {
         return new Date(b.finishedAt) - new Date(a.finishedAt);
@@ -3309,18 +3364,67 @@
         .join("");
     }
 
-    var finishedIds = {};
+    if (abandonedEl) {
+      var abandoned = state.books
+        .filter(function (b) {
+          return isBookAbandoned(b);
+        })
+        .sort(function (a, b) {
+          return new Date(b.abandonedAt) - new Date(a.abandonedAt);
+        });
+
+      if (abandoned.length === 0) {
+        abandonedEl.innerHTML =
+          '<tr><td colspan="8" class="kitaplar-empty-cell"><p class="kitaplar-empty-msg">Henüz vazgeçtiğin bir kitap yok.</p></td></tr>';
+      } else {
+        abandonedEl.innerHTML = abandoned
+          .map(function (b) {
+            var mins = sumMinutesForBook(b.id);
+            var pages = sumPagesForBook(b.id);
+            return (
+              "<tr><td>" +
+              escapeHtml(b.title) +
+              "</td><td>" +
+              escapeHtml(b.author || "—") +
+              "</td><td>" +
+              formatDateOnly(b.startedAt) +
+              "</td><td>" +
+              formatDateOnly(b.abandonedAt) +
+              "</td><td>" +
+              mins +
+              " dk</td><td>" +
+              pages +
+              " syf</td><td>" +
+              (b.totalPages ? String(b.totalPages) : "—") +
+              '</td><td class="kitaplar-td--icon kitaplar-td--actions">' +
+              '<button type="button" class="btn-icon btn-icon--resume" data-book-resume="' +
+              escapeHtml(b.id) +
+              '" aria-label="Okumaya devam et" title="Devam et">' +
+              BOOK_ICON_RESUME_SVG +
+              "</button>" +
+              '<button type="button" class="btn-icon btn-icon--danger" data-book-delete="' +
+              escapeHtml(b.id) +
+              '" aria-label="Kitabı ve okuma kayıtlarını sil">' +
+              BOOK_ICON_TRASH_SVG +
+              "</button></td></tr>"
+            );
+          })
+          .join("");
+      }
+    }
+
+    var closedIds = {};
     state.books.forEach(function (b) {
-      if (b.finishedAt) finishedIds[b.id] = true;
+      if (isBookFinished(b) || isBookAbandoned(b)) closedIds[b.id] = true;
     });
 
     var ids = {};
     state.books.forEach(function (b) {
-      if (finishedIds[b.id]) return;
+      if (closedIds[b.id]) return;
       ids[b.id] = b.title;
     });
     state.sessions.forEach(function (s) {
-      if (s.category === "book" && s.bookId && !finishedIds[s.bookId]) {
+      if (s.category === "book" && s.bookId && !closedIds[s.bookId]) {
         ids[s.bookId] = ids[s.bookId] || s.bookTitle || "Kitap";
       }
     });
@@ -3328,7 +3432,7 @@
     var bookIdList = Object.keys(ids);
     if (bookIdList.length === 0) {
       timelineEl.innerHTML =
-        '<p class="kitaplar-timeline-empty">Okunmakta olan kitap yok. Bitirilen kitaplar yukarıdaki tabloda listelenir.</p>';
+        '<p class="kitaplar-timeline-empty">Okunmakta olan kitap yok. Bitirilenler ve vazgeçtiklerin yukarıda listelenir.</p>';
       return;
     }
 
@@ -6197,13 +6301,27 @@
         session.bookId = bookId;
         session.bookTitle = bookTitle;
         session.pagesRead = pagesRead;
-        session.finishedBook = el.bookFinished.checked;
+        var markFinished = !!(el.bookFinished && el.bookFinished.checked);
+        var markAbandoned = !!(el.bookAbandoned && el.bookAbandoned.checked);
+        if (markFinished && markAbandoned) {
+          alert("Aynı anda hem bitirdim hem vazgeçiyorum seçilemez.");
+          return;
+        }
+        session.finishedBook = markFinished;
+        session.abandonedBook = markAbandoned;
         var startD = el.bookDateStart && el.bookDateStart.value;
         var endD = el.bookDateEnd && el.bookDateEnd.value;
-        applyBookDatesToBook(bookId, startD, endD);
-        if (session.finishedBook && bookId) {
-          if (!endD || !String(endD).trim()) {
-            markBookFinished(bookId);
+        if (markAbandoned && bookId) {
+          applyBookDatesToBook(bookId, startD, "");
+          var abdIso =
+            endD && String(endD).trim() ? dateInputToIsoLocal(endD) : null;
+          markBookAbandoned(bookId, abdIso);
+        } else {
+          applyBookDatesToBook(bookId, startD, endD);
+          if (markFinished && bookId) {
+            if (!endD || !String(endD).trim()) {
+              markBookFinished(bookId);
+            }
           }
         }
       } else if (cat === "investment") {
@@ -6238,6 +6356,7 @@
       if (el.bookAuthor) el.bookAuthor.value = "";
       if (el.bookPagesRead) el.bookPagesRead.value = "";
       if (el.bookFinished) el.bookFinished.checked = false;
+      if (el.bookAbandoned) el.bookAbandoned.checked = false;
       if (cat === "book") populateBookFieldsFromSelect();
       else {
         if (el.bookTotalPages) el.bookTotalPages.value = "";
@@ -6260,6 +6379,15 @@
     setInvestDateDefaults();
     syncCategoryUI();
     syncBookNewFields();
+    if (el.bookFinished && el.bookAbandoned && !el.bookFinished.dataset.mutexBound) {
+      el.bookFinished.dataset.mutexBound = "1";
+      el.bookFinished.addEventListener("change", function () {
+        if (el.bookFinished.checked && el.bookAbandoned) el.bookAbandoned.checked = false;
+      });
+      el.bookAbandoned.addEventListener("change", function () {
+        if (el.bookAbandoned.checked && el.bookFinished) el.bookFinished.checked = false;
+      });
+    }
   } else if (page === "gecmis") {
     var gecmisTabs = document.querySelector(".gecmis-cat-tabs");
     if (gecmisTabs && !gecmisTabs.dataset.bound) {
@@ -6283,16 +6411,28 @@
   } else if (page === "kitaplar") {
     bindExportClick();
     attachStandardImport();
-    var finBody = document.getElementById("kitaplar-finished-body");
-    if (finBody && !finBody.dataset.bookDeleteBound) {
-      finBody.dataset.bookDeleteBound = "1";
-      finBody.addEventListener("click", function (e) {
+    function bindKitaplarTableActions(tableBody) {
+      if (!tableBody || tableBody.dataset.bookActionsBound) return;
+      tableBody.dataset.bookActionsBound = "1";
+      tableBody.addEventListener("click", function (e) {
+        var resume = e.target.closest("[data-book-resume]");
+        if (resume) {
+          var resumeId = resume.getAttribute("data-book-resume");
+          if (!resumeId) return;
+          if (!confirm("Bu kitabı tekrar okunmakta olanlara taşımak istiyor musun?")) return;
+          resumeAbandonedBook(resumeId);
+          renderKitaplarPage();
+          if (page === "yeni" && el.bookSelect) populateBookSelect();
+          return;
+        }
         var del = e.target.closest("[data-book-delete]");
         if (!del) return;
         var bid = del.getAttribute("data-book-delete");
         if (bid) deleteFinishedBook(bid);
       });
     }
+    bindKitaplarTableActions(document.getElementById("kitaplar-finished-body"));
+    bindKitaplarTableActions(document.getElementById("kitaplar-abandoned-body"));
     var ktl = document.getElementById("kitaplar-timeline");
     if (ktl && !ktl.dataset.bookDatesBound) {
       ktl.dataset.bookDatesBound = "1";
@@ -6307,6 +6447,21 @@
             toggle.setAttribute("aria-expanded", open ? "true" : "false");
             toggle.classList.toggle("book-block__edit-toggle--open", open);
           }
+          return;
+        }
+        var abandonBtn = e.target.closest("[data-book-abandon]");
+        if (abandonBtn) {
+          var abdId = abandonBtn.getAttribute("data-book-abandon");
+          if (!abdId) return;
+          if (
+            !confirm(
+              "Bu kitabı Vazgeçtiklerim listesine taşımak istediğine emin misin? Okuma oturumları silinmez."
+            )
+          ) {
+            return;
+          }
+          markBookAbandoned(abdId);
+          renderKitaplarPage();
           return;
         }
         var metaBtn = e.target.closest(".book-meta-save");
