@@ -3256,7 +3256,7 @@
           '<button type="button" class="btn btn--ghost btn--small book-block__abandon-btn" data-book-abandon="' +
           escapeHtml(bid) +
           '">Bu kitaptan vazgeç</button>' +
-          '<span class="book-block__abandon-hint">Bitirmedim, devam etmeyeceğim</span>' +
+          '<span class="book-block__abandon-hint">Bitirmedim</span>' +
           "</div>"
         : "";
 
